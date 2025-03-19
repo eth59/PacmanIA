@@ -34,6 +34,8 @@ class Pacman(Entity):
         if self.overshotTarget():
             self.node = self.target
             if self.node.neighbors[PORTAL] is not None:
+                self.pipe_sound = pygame.mixer.Sound("resources/sounds/pipe.mp3")
+                self.pipe_sound.play()
                 self.node = self.node.neighbors[PORTAL]
             self.target = self.getNewTarget(direction)
             if self.target is not self.node:

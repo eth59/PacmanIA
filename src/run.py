@@ -33,6 +33,14 @@ class GameController(object):
         self.fruitCaptured = []
         self.fruitNode = None
         self.mazedata = MazeData()
+        pygame.mixer.music.load("resources/sounds/music.mp3")
+        pygame.mixer.music.play(-1)
+        pygame.mixer.music.set_volume(0.2)
+        self.powerup_sound = pygame.mixer.Sound("resources/sounds/powerup.mp3")
+        self.death_sound = pygame.mixer.Sound("resources/sounds/death.wav")
+        self.eatfruit_sound = pygame.mixer.Sound("resources/sounds/eatfruit.wav")
+        self.eatghost_sound = pygame.mixer.Sound("resources/sounds/eatghost.wav")
+        
 
     def setBackground(self):
         self.background_norm = pygame.surface.Surface(SCREENSIZE).convert()
@@ -46,13 +54,13 @@ class GameController(object):
 
     def startGame(self):      
         self.mazedata.loadMaze(self.level)
-        self.mazesprites = MazeSprites("ressources/"+self.mazedata.obj.name+".txt", "ressources/"+self.mazedata.obj.name+"_rotation.txt")
+        self.mazesprites = MazeSprites("resources/"+self.mazedata.obj.name+".txt", "resources/"+self.mazedata.obj.name+"_rotation.txt")
         self.setBackground()
-        self.nodes = NodeGroup("ressources/"+self.mazedata.obj.name+".txt")
+        self.nodes = NodeGroup("resources/"+self.mazedata.obj.name+".txt")
         self.mazedata.obj.setPortalPairs(self.nodes)
         self.mazedata.obj.connectHomeNodes(self.nodes)
         self.pacman = Pacman(self.nodes.getNodeFromTiles(*self.mazedata.obj.pacmanStart))
-        self.pellets = PelletGroup("ressources/"+self.mazedata.obj.name+".txt")
+        self.pellets = PelletGroup("resources/"+self.mazedata.obj.name+".txt")
         self.ghosts = GhostGroup(self.nodes.getStartTempNode(), self.pacman)
 
         self.ghosts.pinky.setStartNode(self.nodes.getNodeFromTiles(*self.mazedata.obj.addOffset(2, 3)))
@@ -157,6 +165,7 @@ class GameController(object):
                 self.ghosts.clyde.startNode.allowAccess(LEFT, self.ghosts.clyde)
             self.pellets.pelletList.remove(pellet)
             if pellet.name == POWERPELLET:
+                self.powerup_sound.play()
                 self.ghosts.startFreight()
             if self.pellets.isEmpty():
                 self.flashBG = True
@@ -169,6 +178,7 @@ class GameController(object):
                 if ghost.mode.current is FREIGHT:
                     self.pacman.visible = False
                     ghost.visible = False
+                    self.eatghost_sound.play()
                     self.updateScore(ghost.points)                  
                     self.textgroup.addText(str(ghost.points), WHITE, ghost.position.x, ghost.position.y, 8, time=1)
                     self.ghosts.updatePoints()
@@ -179,7 +189,8 @@ class GameController(object):
                     if self.pacman.alive:
                         self.lives -=  1
                         self.lifesprites.removeImage()
-                        self.pacman.die()               
+                        self.pacman.die()   
+                        self.death_sound.play()            
                         self.ghosts.hide()
                         if self.lives <= 0:
                             self.textgroup.showText(GAMEOVERTXT)
@@ -191,10 +202,10 @@ class GameController(object):
         if self.pellets.numEaten == 50 or self.pellets.numEaten == 140:
             if self.fruit is None:
                 self.fruit = Fruit(self.nodes.getNodeFromTiles(9, 20), self.level)
-                print(self.fruit)
         if self.fruit is not None:
             if self.pacman.collideCheck(self.fruit):
                 self.updateScore(self.fruit.points)
+                self.eatfruit_sound.play()
                 self.textgroup.addText(str(self.fruit.points), WHITE, self.fruit.position.x, self.fruit.position.y, 8, time=1)
                 fruitCaptured = False
                 for fruit in self.fruitCaptured:
