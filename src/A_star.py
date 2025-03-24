@@ -1,15 +1,15 @@
 import heapq
 from vector import Vector2
 from constants import *
+import numpy as np
+
 
 class A_star():
-    def __init__(self,ghosts,pellets,pacman,dt):
+    def __init__(self,ghosts,pellets,pacman):
         self.ghosts = ghosts
         self.pellets = pellets
         self.pacman = pacman
-        self.dt=dt
-        # print([(p.position.x,p.position.y) for p in self.pellets])
-        # print(pacman.position.x,pacman.position.y)
+        self.pelletfile="resources/maze1.txt"
 
     def next_move (self):   # doit renvoyer UP, LEFT, DOWN, RIGHT ou STOP
         # lance a_star sur la grille de jeu avec le bon objectif
@@ -38,12 +38,11 @@ class A_star():
         # start=Vector2(32,64)
         goal=self.get_closest_pellet()
         path=self.a_star(start,goal)
+        print(f"start : {start}")
+        # print(f"path : {[(n.position.x,n.position.y) for n in path]}")
         if path is None:
-            # print(f"direction_next_move_none : STOP")
             return STOP
         else:
-            # print(path)
-            # print(f"direction_next_move : {path[0].dir}")
             return path[0].dir
 
 
@@ -52,10 +51,9 @@ class A_star():
         
 
     def a_star(self,start,goal):
-        print(f"goal : {goal}")
         # la position de pacman prend les multiples de 16 les plus proches
         start_16=Vector2(int(start.x/16)*16,int(start.y/16)*16)
-        print(f"départ : {start_16.x},{start_16.y}")
+        print(f"start_16 : {start_16}")
         start_noeud = Noeud(start_16,0,0) #voir quoi mettre pour h
         start_noeud.position.x=int(start_noeud.position.x)
         start_noeud.position.y=int(start_noeud.position.y)
@@ -64,14 +62,11 @@ class A_star():
         closed = []
         current=start_noeud
         while len(open)!=0 and open[0].position != goal:
-            # print(len(open))
             open=supp_noeud(open,current.position)
             closed.append(current)
-            neighbors = current.findNeighbors(self.pacman,self.ghosts,self.dt) #les voisins initialisés avec g=0 et h=0
-            # print(f"current : {current.position}")
+            neighbors = current.findNeighbors(self.pacman,self.ghosts) #les voisins initialisés avec g=0 et h=0
             # print(f"neighbors : {[(n.position.x,n.position.y) for n in neighbors]}")
             for neighbor in neighbors:
-                # print(not appartenir(closed,neighbor.position) and not appartenir(open,neighbor.position)) or (appartenir(open,neighbor.position) and getGNoeud(open,neighbor.position)>current.g+1)
                 if (not appartenir(closed,neighbor.position) and not appartenir(open,neighbor.position)) or (appartenir(open,neighbor.position) and getGNoeud(open,neighbor.position)>current.g+1): # TODO: cout(s,s')=1 : à modifier
                     if appartenir(open,neighbor.position):
                         open=supp_noeud(open,neighbor.position)
@@ -80,16 +75,12 @@ class A_star():
                     neighbor.f=neighbor.g+neighbor.h
                     neighbor.parent=current
                     heapq.heappush(open,neighbor)
-                    # print(f"open : {[(n.position.x,n.position.y) for n in open]}")
                     if appartenir(closed,neighbor.position):
                         closed=supp_noeud(closed,neighbor.position)
                     
             if len(open)!=0:
                 current=open[0]
-            print(f"open : {[(n.position.x,n.position.y) for n in open]}")
-            # print(f"closed : {[(n.position.x,n.position.y) for n in closed]}")
-            # b=a
-            # print(goal in [n.position for n in open])
+            # print(f"ope : {[(n.position.x,n.position.y) for n in open]}")
         if len(open)==0:
             return None
         else:
@@ -97,8 +88,6 @@ class A_star():
             while current.parent != None:
                 path.append(current)
                 current=current.parent
-            # print(f"path : {[(n.x,n.y) for n in path]}")
-            # print(path)
             return path[::-1]
 
     
@@ -116,15 +105,26 @@ class Noeud():
         """Permet de comparer deux objets Noeud par la valeur de f."""
         return self.f < other.f
     
-    def findNeighbors(self,pacman,ghosts,dt):
+    def findNeighbors(self,pacman,ghosts):
         directions={UP:Vector2(0, -16),DOWN:Vector2(0, 16), 
                           LEFT:Vector2(-16, 0), RIGHT:Vector2(16, 0), STOP:Vector2()}
         neighbors=[]
         for dir in [UP,DOWN,LEFT,RIGHT]:
             pos=self.position+directions[dir]
-            if pacman.validDirection(dir) and not collideGhosts(pos,ghosts,pacman):
+            print(f"pos : {pos}")
+            if pos.x>=0 and pos.y>=0 and pos.x<=448 and pos.y<=576 and validDirection(pos) and not collideGhosts(pos,ghosts,pacman):
                 neighbors.append(Noeud(pos,0,0,dir))
         return neighbors
+    
+def validDirection(pos):
+    data = readPelletfile("resources/maze1.txt")
+    if data[int(pos.y/16)][int(pos.x/16)].isdigit():
+        return False
+    return True
+
+def readPelletfile(textfile):
+    return np.loadtxt(textfile, dtype='<U1')
+
     
 def collideGhosts(pos,ghosts,pacman):
     for ghost in ghosts:
