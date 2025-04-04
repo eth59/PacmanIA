@@ -5,6 +5,7 @@ from constants import *
 from entity import Entity
 from sprites import PacmanSprites
 
+
 class Pacman(Entity):
     def __init__(self, node):
         Entity.__init__(self, node )
@@ -27,11 +28,18 @@ class Pacman(Entity):
         self.alive = False
         self.direction = STOP
 
-    def update(self, dt):	
+    def update(self, dt,dir=None):	
+        self.dt=dt
         self.sprites.update(dt)
         self.position += self.directions[self.direction]*self.speed*dt
+        # print(f"la position de pacman qd ça marche : {self.position}")
         direction = self.getValidKey()
+        # direction=dir
+        print(f"direction voulu : {direction}")
+        print(f"direction avant : {self.direction}")
+        # print(f"overshot : {self.overshotTarget()}")
         if self.overshotTarget():
+            # print("overshotTarget true dans le vrai")
             self.node = self.target
             if self.node.neighbors[PORTAL] is not None:
                 self.pipe_sound = pygame.mixer.Sound("resources/sounds/pipe.mp3")
@@ -49,6 +57,7 @@ class Pacman(Entity):
         else: 
             if self.oppositeDirection(direction):
                 self.reverseDirection()
+        print(f"direction après : {self.direction}")
 
     def getValidKey(self):
         key_pressed = pygame.key.get_pressed()

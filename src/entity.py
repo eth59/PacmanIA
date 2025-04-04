@@ -43,6 +43,8 @@ class Entity(object):
             self.setPosition()
           
     def validDirection(self, direction):
+        # print(f"direction : {direction}")
+        # print(f"{self.name} node : {self.node.position}=={self.position}, access : {self.node.access}")
         if direction is not STOP:
             if self.name in self.node.access[direction]:
                 if self.node.neighbors[direction] is not None:
@@ -50,11 +52,13 @@ class Entity(object):
         return False
 
     def getNewTarget(self, direction):
+        # print(f"direction_target : {direction}")
         if self.validDirection(direction):
             return self.node.neighbors[direction]
         return self.node
 
     def overshotTarget(self):
+        # print(self.target.position)
         if self.target is not None:
             vec1 = self.target.position - self.node.position
             vec2 = self.position - self.node.position
@@ -78,6 +82,7 @@ class Entity(object):
     def validDirections(self):
         directions = []
         for key in [UP, DOWN, LEFT, RIGHT]:
+            # print(f"key : {key}")
             if self.validDirection(key):
                 if key != self.direction * -1:
                     directions.append(key)

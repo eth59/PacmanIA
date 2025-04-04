@@ -11,6 +11,7 @@ from text import TextGroup
 from sprites import LifeSprites
 from sprites import MazeSprites
 from mazedata import MazeData
+from A_star import A_star
 
 class GameController(object):
     def __init__(self):
@@ -104,10 +105,13 @@ class GameController(object):
         self.nodes.denyAccessList(12, 26, UP, self.ghosts)
         self.nodes.denyAccessList(15, 26, UP, self.ghosts)
 
-        
+    def getValidKey_Astar(self,dt):
+        astar=A_star(self.ghosts,self.pellets.pelletList,self.pacman,dt)
+        return astar.next_move()
 
-    def update(self):
+    def update(self,i):
         dt = self.clock.tick(30) / 1000.0
+        dt=0.033
         self.textgroup.update(dt)
         self.pellets.update(dt)
         if not self.pause.paused:
@@ -115,14 +119,23 @@ class GameController(object):
             if self.fruit is not None:
                 self.fruit.update(dt)
             self.checkPelletEvents()
-            self.checkGhostEvents()
+            # self.checkGhostEvents()
             self.checkFruitEvents()
-
         if self.pacman.alive:
             if not self.pause.paused:
+                print("debut",i)
+                print(f"node : {self.pacman.node.position}=={self.pacman.position}, access : {self.pacman.node.access}")
+                print(f"node : {self.pacman.target.position}=={self.pacman.position}, access : {self.pacman.target.access}")
+                # self.pacman.update(dt,self.getValidKey_Astar(dt))
                 self.pacman.update(dt)
+                # print(self.pacman.position)
+                print("fin\n")
         else:
+            print("debut",i)
+            # self.pacman.update(dt,self.getValidKey_Astar(dt))
             self.pacman.update(dt)
+            # print(self.pacman.position)
+            print("fin\n")
 
         if self.flashBG:
             self.flashTimer += dt
@@ -283,8 +296,9 @@ class GameController(object):
 if __name__ == "__main__":
     game = GameController()
     game.startGame()
+    i=0
     while True:
-        game.update()
-
+        game.update(i)
+        i+=1
 
 
