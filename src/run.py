@@ -105,8 +105,8 @@ class GameController(object):
         self.nodes.denyAccessList(12, 26, UP, self.ghosts)
         self.nodes.denyAccessList(15, 26, UP, self.ghosts)
 
-    def getValidKey_Astar(self,dt):
-        astar=A_star(self.ghosts,self.pellets.pelletList,self.pacman,dt)
+    def getValidKey_Astar(self):
+        astar=A_star(self.ghosts,self.pellets.pelletList,self.pacman,"resources/"+self.mazedata.obj.name+".txt")
         return astar.next_move()
 
     def update(self,i):
@@ -123,19 +123,12 @@ class GameController(object):
             self.checkFruitEvents()
         if self.pacman.alive:
             if not self.pause.paused:
-                print("debut",i)
-                print(f"node : {self.pacman.node.position}=={self.pacman.position}, access : {self.pacman.node.access}")
-                print(f"node : {self.pacman.target.position}=={self.pacman.position}, access : {self.pacman.target.access}")
-                # self.pacman.update(dt,self.getValidKey_Astar(dt))
-                self.pacman.update(dt)
-                # print(self.pacman.position)
-                print("fin\n")
+                self.pacman.update(dt,self.getValidKey_Astar())
+                # self.pacman.update(dt)
         else:
             print("debut",i)
-            # self.pacman.update(dt,self.getValidKey_Astar(dt))
-            self.pacman.update(dt)
-            # print(self.pacman.position)
-            print("fin\n")
+            self.pacman.update(dt,self.getValidKey_Astar(dt))
+            # self.pacman.update(dt)
 
         if self.flashBG:
             self.flashTimer += dt
