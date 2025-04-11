@@ -17,10 +17,17 @@ class A_star():
         self.level=level
         self.nodes={}
         self.pathSymbols = ['.', '-', '|', 'p','+', 'P', 'n']
-        data = self.readMazeFile(level)
-        self.createNodeTable(data)
-        self.connectHorizontally(data)
-        self.connectVertically(data)
+        self.data = self.readMazeFile(level)
+        self.createNodeTable(self.data)
+        self.connectHorizontally(self.data)
+        self.connectVertically(self.data)
+        # for n in self.nodes:
+        #     neigbhbors=[]
+        #     for neig in self.nodes[n].neighbors:
+        #         if self.nodes[n].neighbors[neig] is not None:
+        #             neigbhbors.append((self.nodes[n].neighbors[neig].position.x,self.nodes[n].neighbors[neig].position.y))
+        #     print(f"Node {self.nodes[n].position} has neighbors {neigbhbors}")
+        self.tunnels = []
 
     def createNodeTable(self, data):
         for row in list(range(data.shape[0])):
@@ -62,6 +69,39 @@ class A_star():
                         key = otherkey
                 else:
                     key = None
+    
+    def setPortalPair(self,pair1,pair2):
+        #trouver si c'est un tunnel vers le bas, vers le haut, vers la droite ou vers la gauche
+        # regarder quels sont les voisins : peut venir que d'une direction donc continuera dans cette direction
+        x1,y1=pair1
+        x2,y2=pair2
+        x1=x1*16
+        y1=y1*16
+        x2=x2*16
+        y2=y2*16
+        pair1=(x1,y1)
+        pair2=(x2,y2)
+        self.tunnels.append((pair1,pair2))
+        for neighbor in self.nodes[pair1].neighbors:
+            if self.nodes[pair1].neighbors[neighbor] is not None:
+                dir1=-neighbor
+        for neighbor in self.nodes[pair2].neighbors:
+            if self.nodes[pair2].neighbors[neighbor] is not None:
+                dir2=-neighbor
+        self.nodes[pair1].neighbors[dir1]=self.nodes[pair2]
+        self.nodes[pair2].neighbors[dir2]=self.nodes[pair1]
+        
+        # for n in self.nodes:
+        #     neigbhbors=[]
+        #     for neig in self.nodes[n].neighbors:
+        #         if self.nodes[n].neighbors[neig] is not None:
+        #             neigbhbors.append((self.nodes[n].neighbors[neig].position.x,self.nodes[n].neighbors[neig].position.y))
+        #     print(f"Node {self.nodes[n].position} has neighbors {neigbhbors}")
+
+        return
+
+
+
 
 
 
@@ -81,6 +121,8 @@ class A_star():
         if path is None or len(path)==0:
             return STOP
         else:
+            #on affiche les positions dans le path
+            # print([(p.position.x,p.position.y) for p in path])  
             return path[0].dir
 
 
@@ -109,28 +151,30 @@ class A_star():
         
 
     def a_star(self,goal):
+        print("debut")
         start_16=Vector2((self.pacman.position.x//16)*16,(self.pacman.position.y//16)*16)
         start_noeud = Noeud(start_16,0,0)
-        # start_noeud.position.x=int(start_noeud.position.x)
-        # start_noeud.position.y=int(start_noeud.position.y)
         open = []
         heapq.heappush(open, start_noeud)
         closed = []
         current=start_noeud
         goal_find = open[0].isGoal(goal,self.pacman)
         while len(open)!=0 and not goal_find:
+            print(f"open : {[(p.position.x,p.position.y,p.f) for p in open]}")
             open=supp_noeud(open,current.position)
             closed.append(current)
             neighbors = current.findNeighbors(self.nodes,self.ghosts,self.pacman) #les voisins initialisés avec g=0 et h=0
+            print(f"neighbors of {current.position.x,current.position.y}: {[(n.position.x,n.position.y) for n in neighbors]}")
             for neighbor in neighbors:
                 if (not appartenir(closed,neighbor.position) and not appartenir(open,neighbor.position)) or (appartenir(open,neighbor.position) and getGNoeud(open,neighbor.position)>current.g+1): # TODO: cout(s,s')=1 : à modifier
                     if appartenir(open,neighbor.position):
                         open=supp_noeud(open,neighbor.position)
                     neighbor.g=current.g+1
-                    neighbor.h= heuristic(neighbor,goal.position)
+                    neighbor.h= heuristic(neighbor,goal.position,self.tunnels)
                     neighbor.f=neighbor.g+neighbor.h
                     neighbor.parent=current
                     heapq.heappush(open,neighbor)
+                    # print(f"open : {[(p.position.x,p.position.y) for p in open]}")
                     if appartenir(closed,neighbor.position):
                         closed=supp_noeud(closed,neighbor.position)
                     
@@ -202,8 +246,21 @@ def getGNoeud(liste,position):
     else:
         return l[0]
 
-def heuristic(noeud, goal):
-    return abs(noeud.position.x-goal.x)+abs(noeud.position.y-goal.y)
+def heuristic(noeud, goal,tunnels):
+    dist = abs(noeud.position.x-goal.x)+abs(noeud.position.y-goal.y)
+    #comparer aux distances en passant par chaque tunnel
+    if tunnels != []:
+        for t in tunnels:
+            #dist aux deux entrées :
+            dist_1= abs(noeud.position.x-t[0][0])+abs(noeud.position.y-t[0][1])
+            dist_2= abs(noeud.position.x-t[1][0])+abs(noeud.position.y-t[1][1])
+            if dist_1<dist_2:
+                dist_tunnel=dist_1+abs(t[1][0]-goal.x)+abs(t[1][1]-goal.y)
+            else:
+                dist_tunnel=dist_2+abs(t[0][0]-goal.x)+abs(t[0][1]-goal.y)
+            if dist_tunnel<dist:
+                dist=dist_tunnel
+    return dist
 
 if __name__ == "__main__":
     n1=Noeud((1,1))

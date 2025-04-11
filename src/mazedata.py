@@ -9,6 +9,10 @@ class MazeBase(object):
     def setPortalPairs(self, nodes):
         for pair in list(self.portalPairs.values()):
             nodes.setPortalPair(*pair)
+    
+    def setPortalPairsAstar(self,astar):
+        for pair in list(self.portalPairs.values()):
+            astar.setPortalPair(*pair)
 
     def connectHomeNodes(self, nodes):
         key = nodes.createHomeNodes(*self.homeoffset)

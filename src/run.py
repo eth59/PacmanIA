@@ -107,6 +107,8 @@ class GameController(object):
 
     def getValidKey_Astar(self):
         astar=A_star(self.ghosts,self.pellets.pelletList,self.pacman,"resources/"+self.mazedata.obj.name+".txt")
+        self.mazedata.obj.setPortalPairsAstar(astar)
+
         return astar.next_move()
 
     def update(self,i):
@@ -126,8 +128,7 @@ class GameController(object):
                 self.pacman.update(dt,self.getValidKey_Astar())
                 # self.pacman.update(dt)
         else:
-            print("debut",i)
-            self.pacman.update(dt,self.getValidKey_Astar(dt))
+            self.pacman.update(dt,self.getValidKey_Astar())
             # self.pacman.update(dt)
 
         if self.flashBG:
