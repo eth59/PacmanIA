@@ -115,8 +115,12 @@ class A_star():
         #commencer par les powerpellets ?
 
         #lancer a_star
+        print("début")
         goal=self.get_closest_pellet()
-        path=self.a_star(goal)
+        print("fin\n")
+        path=None
+        if goal is not None:
+            path=self.a_star(goal)
         
         if path is None or len(path)==0:
             return STOP
@@ -134,14 +138,17 @@ class A_star():
         n=self.nodes[pos]
         pos=Vector2(self.pacman.position.x//16*16,self.pacman.position.y//16*16)
         open=[n]
+        closed=[]
         for pellet in self.pellets :
             if pellet.position == pos:
                 return pellet
         while(len(open)!=0):
+            print(f"open : {[(p.position.x,p.position.y) for p in open]}")
             current=open.pop(0)
+            closed.append(current)
             for neighbor in current.neighbors:
                 neighbor = current.neighbors[neighbor]
-                if neighbor is not None and neighbor not in open:
+                if neighbor is not None and neighbor not in open and neighbor not in closed and not collideGhosts(neighbor.position,self.ghosts,self.pacman):
                     open.append(neighbor)
                     for pellet in self.pellets :
                         if pellet.position == neighbor.position:
@@ -207,17 +214,20 @@ class A_star():
         #     dist+=1000000
         # if self.same_node_ghost():
         #     dist+=1000000
-        self.ghost_penality(noeud,dist)
+        # dist,nb_pen=self.ghost_penality(noeud,dist)
+        dist,nb_pen=self.ghost_penality(noeud,dist)
         return dist
 
     def ghost_penality(self,noeud,dist): #TODO : mettre une variable frightened
+        nb_pen=0
         if collideGhosts(noeud.position,self.ghosts,self.pacman): # normalement n'arrive pas (fantômes considérés comme des murs mouvants)
             dist+=1000000
-            print("malus")
+            nb_pen
         for ghost in self.ghosts:
             if manhattan_distance(noeud.position,ghost.position) < 4*TILEWIDTH:
+                nb_pen+=1
                 dist+=1000000
-        return dist
+        return dist,nb_pen
 class Noeud():
     def __init__(self, position, g=0, h=0,dir=STOP):
         self.position = position
