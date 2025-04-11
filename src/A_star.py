@@ -126,7 +126,7 @@ class A_star():
             return path[0].dir
 
 
-    def get_closest_pellet(self): # TODO : à corriger
+    def get_closest_pellet(self): # TODO : à corriger ? + considérer les fantômes
         # trouver la node sur laquelle on est
         # partir de cette node puis de voisins en voisins (parcours en largeur)
         # dès qu'il y a un pellet on le choisi comme goal
@@ -151,7 +151,6 @@ class A_star():
         
 
     def a_star(self,goal):
-        print("debut")
         start_16=Vector2((self.pacman.position.x//16)*16,(self.pacman.position.y//16)*16)
         start_noeud = Noeud(start_16,0,0)
         open = []
@@ -160,17 +159,17 @@ class A_star():
         current=start_noeud
         goal_find = open[0].isGoal(goal,self.pacman)
         while len(open)!=0 and not goal_find:
-            print(f"open : {[(p.position.x,p.position.y,p.f) for p in open]}")
+            # print(f"open : {[(p.position.x,p.position.y,p.f) for p in open]}")
             open=supp_noeud(open,current.position)
             closed.append(current)
             neighbors = current.findNeighbors(self.nodes,self.ghosts,self.pacman) #les voisins initialisés avec g=0 et h=0
-            print(f"neighbors of {current.position.x,current.position.y}: {[(n.position.x,n.position.y) for n in neighbors]}")
+            # print(f"neighbors of {current.position.x,current.position.y}: {[(n.position.x,n.position.y) for n in neighbors]}")
             for neighbor in neighbors:
                 if (not appartenir(closed,neighbor.position) and not appartenir(open,neighbor.position)) or (appartenir(open,neighbor.position) and getGNoeud(open,neighbor.position)>current.g+1): # TODO: cout(s,s')=1 : à modifier
                     if appartenir(open,neighbor.position):
                         open=supp_noeud(open,neighbor.position)
                     neighbor.g=current.g+1
-                    neighbor.h= heuristic(neighbor,goal.position,self.tunnels)
+                    neighbor.h= self.heuristic(neighbor,goal.position)
                     neighbor.f=neighbor.g+neighbor.h
                     neighbor.parent=current
                     heapq.heappush(open,neighbor)
@@ -189,6 +188,36 @@ class A_star():
                 path.append(current)
                 current=current.parent
             return path[::-1]
+    
+    def heuristic(self, noeud, goal):
+        dist = abs(noeud.position.x-goal.x)+abs(noeud.position.y-goal.y)
+        #comparer aux distances en passant par chaque tunnel
+        if self.tunnels != []:
+            for t in self.tunnels:
+                #dist aux deux entrées :
+                dist_1= abs(noeud.position.x-t[0][0])+abs(noeud.position.y-t[0][1])
+                dist_2= abs(noeud.position.x-t[1][0])+abs(noeud.position.y-t[1][1])
+                if dist_1<dist_2:
+                    dist_tunnel=dist_1+abs(t[1][0]-goal.x)+abs(t[1][1]-goal.y)
+                else:
+                    dist_tunnel=dist_2+abs(t[0][0]-goal.x)+abs(t[0][1]-goal.y)
+                if dist_tunnel<dist:
+                    dist=dist_tunnel
+        # if collideGhosts(noeud.position,self.ghosts,self.pacman): #le risque de croiser un fantôme doit être pénalisé
+        #     dist+=1000000
+        # if self.same_node_ghost():
+        #     dist+=1000000
+        self.ghost_penality(noeud,dist)
+        return dist
+
+    def ghost_penality(self,noeud,dist): #TODO : mettre une variable frightened
+        if collideGhosts(noeud.position,self.ghosts,self.pacman): # normalement n'arrive pas (fantômes considérés comme des murs mouvants)
+            dist+=1000000
+            print("malus")
+        for ghost in self.ghosts:
+            if manhattan_distance(noeud.position,ghost.position) < 4*TILEWIDTH:
+                dist+=1000000
+        return dist
 class Noeud():
     def __init__(self, position, g=0, h=0,dir=STOP):
         self.position = position
@@ -208,7 +237,9 @@ class Noeud():
         pos=(x,y)
         for neighbor in nodes[pos].neighbors:
             if nodes[pos].neighbors[neighbor]!=None:
-                neighbors.append(Noeud(nodes[pos].neighbors[neighbor].position,dir=neighbor))
+                if not collideGhosts(nodes[pos].neighbors[neighbor].position,ghosts,pacman): #considère les fantômes comme des murs mouvants
+                    neighbors.append(Noeud(nodes[pos].neighbors[neighbor].position,dir=neighbor))
+                # neighbors.append(Noeud(nodes[pos].neighbors[neighbor].position,dir=neighbor))
         return neighbors
 
     def isGoal(self,goal,pacman):
@@ -219,7 +250,7 @@ class Noeud():
             return True
         return False
 
-def collideGhosts(pos,ghosts,pacman):
+def collideGhosts(pos,ghosts,pacman): #TODO : mettre une variable frightened
     for ghost in ghosts:
         d = pos - ghost.position
         dSquared = d.magnitudeSquared()
@@ -246,21 +277,8 @@ def getGNoeud(liste,position):
     else:
         return l[0]
 
-def heuristic(noeud, goal,tunnels):
-    dist = abs(noeud.position.x-goal.x)+abs(noeud.position.y-goal.y)
-    #comparer aux distances en passant par chaque tunnel
-    if tunnels != []:
-        for t in tunnels:
-            #dist aux deux entrées :
-            dist_1= abs(noeud.position.x-t[0][0])+abs(noeud.position.y-t[0][1])
-            dist_2= abs(noeud.position.x-t[1][0])+abs(noeud.position.y-t[1][1])
-            if dist_1<dist_2:
-                dist_tunnel=dist_1+abs(t[1][0]-goal.x)+abs(t[1][1]-goal.y)
-            else:
-                dist_tunnel=dist_2+abs(t[0][0]-goal.x)+abs(t[0][1]-goal.y)
-            if dist_tunnel<dist:
-                dist=dist_tunnel
-    return dist
+def manhattan_distance(a, b):
+    return abs(a.x - b.x) + abs(a.y - b.y)
 
 if __name__ == "__main__":
     n1=Noeud((1,1))
