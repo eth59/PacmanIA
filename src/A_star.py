@@ -113,11 +113,10 @@ class A_star():
         #il faut aussi considérer la place des fantômes
         #considérer les fruits et manger les fantômes ?
         #commencer par les powerpellets ?
+        #considérer le fait qu'un fantôme peut pas revenir en arrière
 
         #lancer a_star
-        print("début")
         goal=self.get_closest_pellet()
-        print("fin\n")
         path=None
         if goal is not None:
             path=self.a_star(goal)
@@ -130,7 +129,7 @@ class A_star():
             return path[0].dir
 
 
-    def get_closest_pellet(self): # TODO : à corriger ? + considérer les fantômes
+    def get_closest_pellet(self): # TODO : à corriger ? (pb du il change d'avis)
         # trouver la node sur laquelle on est
         # partir de cette node puis de voisins en voisins (parcours en largeur)
         # dès qu'il y a un pellet on le choisi comme goal
@@ -143,12 +142,12 @@ class A_star():
             if pellet.position == pos:
                 return pellet
         while(len(open)!=0):
-            print(f"open : {[(p.position.x,p.position.y) for p in open]}")
             current=open.pop(0)
             closed.append(current)
             for neighbor in current.neighbors:
                 neighbor = current.neighbors[neighbor]
-                if neighbor is not None and neighbor not in open and neighbor not in closed and not collideGhosts(neighbor.position,self.ghosts,self.pacman):
+                if neighbor is not None and neighbor not in open and neighbor not in closed and not collideGhosts(neighbor.position,self.ghosts,self.pacman) and not nextToGhosts(neighbor.position,self.ghosts):
+                    #il faut trouver un objectif pour qu'il fuit les fantômes quand il y a un blocage à cause des fantômes
                     open.append(neighbor)
                     for pellet in self.pellets :
                         if pellet.position == neighbor.position:
@@ -210,12 +209,7 @@ class A_star():
                     dist_tunnel=dist_2+abs(t[0][0]-goal.x)+abs(t[0][1]-goal.y)
                 if dist_tunnel<dist:
                     dist=dist_tunnel
-        # if collideGhosts(noeud.position,self.ghosts,self.pacman): #le risque de croiser un fantôme doit être pénalisé
-        #     dist+=1000000
-        # if self.same_node_ghost():
-        #     dist+=1000000
-        # dist,nb_pen=self.ghost_penality(noeud,dist)
-        dist,nb_pen=self.ghost_penality(noeud,dist)
+        dist,nb_pen=self.ghost_penality(noeud,dist) #le risque de croiser un fantôme doit être pénalisé
         return dist
 
     def ghost_penality(self,noeud,dist): #TODO : mettre une variable frightened
@@ -223,10 +217,12 @@ class A_star():
         if collideGhosts(noeud.position,self.ghosts,self.pacman): # normalement n'arrive pas (fantômes considérés comme des murs mouvants)
             dist+=1000000
             nb_pen
+        n = 5 # n est le nombre de tiles entre un fantôme et pacman nécessaire pour qu'il n'y ait pas de pénalité
         for ghost in self.ghosts:
-            if manhattan_distance(noeud.position,ghost.position) < 4*TILEWIDTH:
-                nb_pen+=1
-                dist+=1000000
+            if not ghost.mode.current == FREIGHT:
+                if manhattan_distance(noeud.position,ghost.position) < n*TILEWIDTH:
+                    nb_pen+=1
+                    dist+=1000000*(n-(manhattan_distance(noeud.position,ghost.position)//(TILEWIDTH)))
         return dist,nb_pen
 class Noeud():
     def __init__(self, position, g=0, h=0,dir=STOP):
@@ -248,7 +244,8 @@ class Noeud():
         for neighbor in nodes[pos].neighbors:
             if nodes[pos].neighbors[neighbor]!=None:
                 if not collideGhosts(nodes[pos].neighbors[neighbor].position,ghosts,pacman): #considère les fantômes comme des murs mouvants
-                    neighbors.append(Noeud(nodes[pos].neighbors[neighbor].position,dir=neighbor))
+                    if not nextToGhosts(nodes[pos].neighbors[neighbor].position,ghosts):
+                        neighbors.append(Noeud(nodes[pos].neighbors[neighbor].position,dir=neighbor))
                 # neighbors.append(Noeud(nodes[pos].neighbors[neighbor].position,dir=neighbor))
         return neighbors
 
@@ -262,12 +259,22 @@ class Noeud():
 
 def collideGhosts(pos,ghosts,pacman): #TODO : mettre une variable frightened
     for ghost in ghosts:
-        d = pos - ghost.position
-        dSquared = d.magnitudeSquared()
-        rSquared = (pacman.collideRadius + ghost.collideRadius)**2
-        if dSquared <= rSquared:
-            return True
+        if not ghost.mode.current == FREIGHT:
+            d = pos - ghost.position
+            dSquared = d.magnitudeSquared()
+            rSquared = (pacman.collideRadius + ghost.collideRadius)**2
+            if dSquared <= rSquared:
+                return True
     return False
+
+def nextToGhosts(pos,ghosts):
+    n = 2 # n est le nombre de tiles entre un fantôme et la position nécessaire pour qu'il ne soit pas considéré comme un mur
+    for ghost in ghosts:
+        if not ghost.mode.current ==FREIGHT:
+            if manhattan_distance(pos,ghost.position) < n*TILEWIDTH:
+                return True
+    return False
+    
 
 def supp_noeud(liste, position):
         l=[n for n in liste if n.position != position]

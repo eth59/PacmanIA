@@ -35,7 +35,7 @@ class GameController(object):
         self.fruitNode = None
         self.mazedata = MazeData()
         pygame.mixer.music.load("resources/sounds/music.mp3")
-        pygame.mixer.music.play(-1)
+        # pygame.mixer.music.play(-1)
         pygame.mixer.music.set_volume(0.2)
         self.powerup_sound = pygame.mixer.Sound("resources/sounds/powerup.mp3")
         self.death_sound = pygame.mixer.Sound("resources/sounds/death.wav")
