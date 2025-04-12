@@ -10,7 +10,7 @@ class noeud_MonteCarlo:
         self.pacman=pacman
         self.ghosts = ghosts
         self.score = 0
-        self.visits = 0
+        self.nbvisits = 0
         self.value = 0
 
 
@@ -18,7 +18,7 @@ class noeud_MonteCarlo:
         return list(self.node.neighbors.keys())
     
     def children(self):
-        if self.moves is not None:
+        while self.moves is not None:
             move= self.moves.pop()
             if move is not None:
                 new_node_pour_MC = self.node.neighbors[move]
