@@ -12,6 +12,7 @@ from sprites import LifeSprites
 from sprites import MazeSprites
 from mazedata import MazeData
 from A_star import A_star
+from MonteCarlo import MonteCarlo
 
 class GameController(object):
     def __init__(self):
@@ -111,6 +112,10 @@ class GameController(object):
 
         return astar.next_move()
 
+    def getValidKey_MonteCarlo(self):
+        montecarlo=MonteCarlo(self.pacman, self.ghosts, self.pellets.pelletList,"resources/"+self.mazedata.obj.name+".txt",50)
+        return montecarlo.next_move()
+
     def update(self,i):
         dt = self.clock.tick(30) / 1000.0
         dt=0.033
@@ -125,10 +130,12 @@ class GameController(object):
             self.checkFruitEvents()
         if self.pacman.alive:
             if not self.pause.paused:
-                self.pacman.update(dt,self.getValidKey_Astar())
+                self.pacman.update(dt,self.getValidKey_MonteCarlo())
+                #self.pacman.update(dt,self.getValidKey_Astar())
                 # self.pacman.update(dt)
         else:
-            self.pacman.update(dt,self.getValidKey_Astar())
+            self.pacman.update(dt,self.getValidKey_MonteCarlo())
+            #self.pacman.update(dt,self.getValidKey_Astar())
             # self.pacman.update(dt)
 
         if self.flashBG:

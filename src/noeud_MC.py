@@ -15,11 +15,15 @@ class noeud_MonteCarlo:
 
 
     def valid_moves(self):
-        return list(self.node.neighbors.keys())
+        L= list(self.node.neighbors.keys())
+        print(L)
+        return L
     
-    def children(self):
+    def add_children(self):
         while self.moves is not None:
             move= self.moves.pop()
+            test = next((k for k, v in self.node.neighbors.items() if v == move), None)
+            print(test)
             if move is not None:
                 new_node_pour_MC = self.node.neighbors[move]
                 child_noeud_MC = noeud_MonteCarlo(new_node_pour_MC,self.pacman,self.ghosts,self.pellets, parent=self)
