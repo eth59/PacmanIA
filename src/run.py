@@ -113,7 +113,7 @@ class GameController(object):
         return astar.next_move()
 
     def getValidKey_MonteCarlo(self):
-        montecarlo=MonteCarlo(self.pacman, self.ghosts, self.pellets.pelletList,"resources/"+self.mazedata.obj.name+".txt",50)
+        montecarlo=MonteCarlo(self.pacman, self.ghosts, self.pellets,"resources/"+self.mazedata.obj.name+".txt",50)
         return montecarlo.next_move()
 
     def update(self,i):
