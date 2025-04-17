@@ -8,12 +8,14 @@ from nodes import Node
 c= math.sqrt(2)
 
 class MonteCarlo():
-    def __init__(self, pacman, ghosts, pellets,level, N):
+    def __init__(self, pacman, ghosts, pellets,level, N, score):
         self.pacman = pacman
         self.ghosts = ghosts
         self.pellets = pellets
         self.N = N
         self.node_mc = noeud_MonteCarlo(self.pacman.position)
+        self.score = score
+        self.last_move=None
 
         self.level=level
         self.nodes={}
@@ -70,6 +72,7 @@ class MonteCarlo():
         while mc_node.children!=[]:  # Traverse until a leaf mc_node
             mc_node = max(mc_node.children,
                         key=lambda child: ((child.value / (child.nbvisits + 1e-6)) + c * math.sqrt(max(0,math.log(mc_node.nbvisits + 1e-6) / (child.nbvisits + 1e-6)))))
+            print(mc_node)
         mc_node.moves= mc_node.findNeighbors(self.nodes,self.ghosts,self.pacman)[1]
         return mc_node
 
@@ -81,21 +84,37 @@ class MonteCarlo():
         current_simulation_state = mc_node
         pacman = self.pacman
         pellets = self.pellets
+        rewards = 0
+        visited_positions=[]
         current_simulation_state.moves= current_simulation_state.findNeighbors(self.nodes,self.ghosts,self.pacman)[1]
+        visited_positions.append(current_simulation_state.position)
         i=0
-        while i<20:
+        while i<50:
             possible_moves= current_simulation_state.moves
             if not possible_moves:
                 break
+            #print(possible_moves)
             move = random.choice(possible_moves)
-            current_simulation_state = current_simulation_state.childrenandMoves.get(move)
-            i+=1 
-            if current_simulation_state is None:
-                print("aaaaaaaaaa")
+            #print(move)
+            if current_simulation_state.childrenandMoves.get(move) is None:
+                print('aaaaaaaaaaa')
                 break
+            current_simulation_state = current_simulation_state.childrenandMoves.get(move)
+            if current_simulation_state.position in visited_positions:
+                rewards -=2000
+                print("hallo")
+            else:
+                visited_positions.append(current_simulation_state.position)
+                
+            if current_simulation_state is None:
+                break
+            i+=1 
             if pellets.isEmpty():
-                return 1
-        return 0
+                return 10000000
+            if self.pelletPresent(current_simulation_state.position.x,current_simulation_state.position.y):
+                #print("peelts:",pellets)
+                return self.score +50 + rewards
+        return self.score + rewards
 
     def backpropagation(self, mc_node, resultat):
         while mc_node is not None:
@@ -106,29 +125,41 @@ class MonteCarlo():
         
     
     def next_move(self):
-        start_16=Vector2((self.pacman.position.x//16)*16,(self.pacman.position.y//16)*16)
-        root = noeud_MonteCarlo(start_16)
-        root.moves= root.findNeighbors(self.nodes,self.ghosts,self.pacman)[1]
-        root.children = root.findNeighbors(self.nodes,self.ghosts,self.pacman)[0]
-        #print(root.moves, root.children)
-        i=0
-        while i<self.N:
-            node= self.selection(root)
-            #print(node.nbvisits)
-            if node.moves:
-                node= self.expansion(node)
-                #print(node.children)
-            resultat = self.simulation(node)
-            self.backpropagation(node,resultat)
-            i+=1
-        #print(root.children)
-        best_child = max (root.children, key=lambda child: child.nbvisits)
-        key = next((k for k, v in root.childrenandMoves.items() if v == best_child), None)
-        if key is not None:
-            print("key: ", key)
-            return key
-        return STOP 
+        # start_16=Vector2((self.pacman.position.x//16)*16,(self.pacman.position.y//16)*16)
+        # root = noeud_MonteCarlo(start_16)
+        # root.moves= root.findNeighbors(self.nodes,self.ghosts,self.pacman)[1]
+        # root.children = root.findNeighbors(self.nodes,self.ghosts,self.pacman)[0]
+        # #print(root.moves, root.children)
+        # i=0
+        # self.last_move=root.position
+        # while i<self.N:
+        #     node= self.selection(root)
+        #     #print(node.nbvisits)
+        #     if node.moves:
+        #         node= self.expansion(node)
+        #         #print(node.children)
+        #     self.last_move=node.position
+        #     resultat = self.simulation(node)
+        #     #print("resultat:", resultat)
+        #     self.backpropagation(node,resultat)
+        #     i+=1
+        # #print(root.children)
+        # if root.children!=[]:
+        #     best_child = max (root.children, key=lambda child: child.value)
+        #     key = next((k for k, v in root.childrenandMoves.items() if v == best_child), None)
+        #     if key is not None:
+        #         print("key: ", key)
+        #         return key
+        list = [LEFT,RIGHT,UP,DOWN]
+        return random.choice(list)
         
+
+    def pelletPresent(self,x,y):
+        current_position = pos=Vector2(x//16*16,y//16*16)
+        for pellet in self.pellets.pelletList:
+            if pellet.position == current_position:
+                return True
+        return False
 
 
 
