@@ -76,6 +76,7 @@ class GameController(object):
         self.ghosts.inky.startNode.denyAccess(RIGHT, self.ghosts.inky)
         self.ghosts.clyde.startNode.denyAccess(LEFT, self.ghosts.clyde)
         self.mazedata.obj.denyGhostsAccess(self.ghosts, self.nodes)
+        self.mC=MonteCarlo(self.pacman, self.ghosts, self.pellets,"resources/"+self.mazedata.obj.name+".txt",300, self.score)
 
     def startGame_old(self):      
         self.mazedata.loadMaze(self.level)#######
@@ -113,8 +114,7 @@ class GameController(object):
         return astar.next_move()
 
     def getValidKey_MonteCarlo(self):
-        montecarlo=MonteCarlo(self.pacman, self.ghosts, self.pellets,"resources/"+self.mazedata.obj.name+".txt",50, self.score)
-        return montecarlo.next_move()
+        return self.mC.next_move()
 
     def update(self,i):
         dt = self.clock.tick(30) / 1000.0
