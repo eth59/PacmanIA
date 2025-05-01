@@ -28,31 +28,57 @@ class Pacman(Entity):
         self.alive = False
         self.direction = STOP
 
-    def update(self, dt,dir=None):	
-        self.dt=dt
+    # def update(self, dt,dir=None):	
+    #     self.dt=dt
+    #     self.sprites.update(dt)
+    #     self.position += self.directions[self.direction]*self.speed*dt
+    #     # direction = self.getValidKey()
+    #     direction=dir
+    #     if self.overshotTarget():
+    #         self.node = self.target
+    #         if self.node.neighbors[PORTAL] is not None:
+    #             self.pipe_sound = pygame.mixer.Sound("resources/sounds/pipe.mp3")
+    #             self.pipe_sound.play()
+    #             self.node = self.node.neighbors[PORTAL]
+    #         self.target = self.getNewTarget(direction)
+    #         if self.target is not self.node:
+    #             self.direction = direction
+    #         else:
+    #             self.target = self.getNewTarget(self.direction)
+
+    #         if self.target is self.node:
+    #             self.direction = STOP
+    #         self.setPosition()
+    #     else: 
+    #         if self.oppositeDirection(direction):
+    #             self.reverseDirection()
+
+    def update(self, dt, dir=None):
+        self.dt = dt
         self.sprites.update(dt)
         self.position += self.directions[self.direction]*self.speed*dt
-        # direction = self.getValidKey()
-        direction=dir
+        ai_direction = dir
         if self.overshotTarget():
             self.node = self.target
             if self.node.neighbors[PORTAL] is not None:
-                self.pipe_sound = pygame.mixer.Sound("resources/sounds/pipe.mp3")
-                self.pipe_sound.play()
+                if pygame.mixer.get_init():
+                    try:
+                        pipe_sound = pygame.mixer.Sound("resources/sounds/pipe.mp3")
+                        pipe_sound.play()
+                    except pygame.error as e:
+                        print(f"Error playing sound: {e}")
                 self.node = self.node.neighbors[PORTAL]
-            self.target = self.getNewTarget(direction)
+            self.target = self.getNewTarget(ai_direction)
             if self.target is not self.node:
-                self.direction = direction
+                self.direction = ai_direction
             else:
                 self.target = self.getNewTarget(self.direction)
+                if self.target is self.node:
+                    self.direction = STOP
 
-            if self.target is self.node:
-                self.direction = STOP
             self.setPosition()
-        else: 
-            if self.oppositeDirection(direction):
-                self.reverseDirection()
-
+        else:
+            pass
     def getValidKey(self):
         key_pressed = pygame.key.get_pressed()
         if key_pressed[K_UP]:

@@ -12,7 +12,11 @@ from sprites import LifeSprites
 from sprites import MazeSprites
 from mazedata import MazeData
 from A_star import A_star
-from MonteCarlo import MonteCarlo
+#from MonteCarlo import MonteCarlo
+from test import MonteCarloSearch
+import numpy as np
+from vector import Vector2
+from jeveuxmourir import DijkstraAI
 
 class GameController(object):
     def __init__(self):
@@ -42,6 +46,8 @@ class GameController(object):
         self.death_sound = pygame.mixer.Sound("resources/sounds/death.wav")
         self.eatfruit_sound = pygame.mixer.Sound("resources/sounds/eatfruit.wav")
         self.eatghost_sound = pygame.mixer.Sound("resources/sounds/eatghost.wav")
+        self.dijkstra_ai=None
+        self.mcts_simulations=250
         
 
     def setBackground(self):
@@ -64,6 +70,7 @@ class GameController(object):
         self.pacman = Pacman(self.nodes.getNodeFromTiles(*self.mazedata.obj.pacmanStart))
         self.pellets = PelletGroup("resources/"+self.mazedata.obj.name+".txt")
         self.ghosts = GhostGroup(self.nodes.getStartTempNode(), self.pacman)
+        self.dijkstra_ai=DijkstraAI(self.nodes, self.pacman, self.pellets, self.ghosts)
 
         self.ghosts.pinky.setStartNode(self.nodes.getNodeFromTiles(*self.mazedata.obj.addOffset(2, 3)))
         self.ghosts.inky.setStartNode(self.nodes.getNodeFromTiles(*self.mazedata.obj.addOffset(0, 3)))
@@ -76,7 +83,7 @@ class GameController(object):
         self.ghosts.inky.startNode.denyAccess(RIGHT, self.ghosts.inky)
         self.ghosts.clyde.startNode.denyAccess(LEFT, self.ghosts.clyde)
         self.mazedata.obj.denyGhostsAccess(self.ghosts, self.nodes)
-        self.mC=MonteCarlo(self.pacman, self.ghosts, self.pellets,"resources/"+self.mazedata.obj.name+".txt",300, self.score)
+        #self.mC=MonteCarlo(self.pacman, self.ghosts, self.pellets,"resources/"+self.mazedata.obj.name+".txt",300, self.score)
 
     def startGame_old(self):      
         self.mazedata.loadMaze(self.level)#######
@@ -113,9 +120,22 @@ class GameController(object):
 
         return astar.next_move()
 
-    def getValidKey_MonteCarlo(self):
-        return self.mC.next_move()
-
+    def getValidKey_Dijkstra(self):
+        """Gets Pacman's next move using the Dijkstra AI."""
+        if not self.pacman or not self.pacman.alive or self.pause.paused:
+            return STOP 
+        if self.dijkstra_ai:
+            try:
+                self.dijkstra_ai.update_ghosts(self.ghosts)
+                next_dir = self.dijkstra_ai.nextDir()
+                return next_dir if next_dir is not None else STOP 
+            except Exception as e:
+                print(e)
+                import traceback
+                traceback.print_exc()
+        else:
+            print("Warning: Dijkstra not initialized in getValidKey_Dijkstra.")
+            return STOP 
     def update(self,i):
         dt = self.clock.tick(30) / 1000.0
         dt=0.033
@@ -130,11 +150,13 @@ class GameController(object):
             self.checkFruitEvents()
         if self.pacman.alive:
             if not self.pause.paused:
-                self.pacman.update(dt,self.getValidKey_MonteCarlo())
+                self.pacman.update(dt,self.getValidKey_Dijkstra())
+                #self.pacman.update(dt,self.getValidKey_MonteCarlo())
                 #self.pacman.update(dt,self.getValidKey_Astar())
                 # self.pacman.update(dt)
         else:
-            self.pacman.update(dt,self.getValidKey_MonteCarlo())
+           self.pacman.update(dt,self.getValidKey_Dijkstra())
+            #self.pacman.update(dt,self.getValidKey_MonteCarlo())
             #self.pacman.update(dt,self.getValidKey_Astar())
             # self.pacman.update(dt)
 
