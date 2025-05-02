@@ -5,9 +5,10 @@ from vector import Vector2
 from constants import *
 from entity import Entity
 from sprites import PacmanSprites
+from sound import DummySound
 
 class Pacman(Entity):
-    def __init__(self, node):
+    def __init__(self, node, no_sound=False):
         Entity.__init__(self, node )
         self.name = PACMAN    
         self.color = YELLOW
@@ -15,6 +16,7 @@ class Pacman(Entity):
         self.setBetweenNodes(LEFT)
         self.alive = True
         self.sprites = PacmanSprites(self)
+        self.pipe_sound = pygame.mixer.Sound("resources/sounds/pipe.mp3") if not no_sound else DummySound()
 
     def reset(self):
         Entity.reset(self)
@@ -52,7 +54,6 @@ class Pacman(Entity):
         if self.overshotTarget():
             self.node = self.target
             if self.node.neighbors[PORTAL] is not None:
-                self.pipe_sound = pygame.mixer.Sound("resources/sounds/pipe.mp3")
                 self.pipe_sound.play()
                 self.node = self.node.neighbors[PORTAL]
             self.target = self.getNewTarget(direction)
