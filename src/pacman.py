@@ -63,6 +63,7 @@ class Pacman(Entity):
             ab = AlphaBeta(state)
             direction = ab.getBestMove()
             print("Direction AI: ", direction)
+            raise NotImplementedError("Why those fucking ghosts don't move?")
         else:
             raise NotImplementedError("Other AI not implemented yet")
         if self.overshotTarget():

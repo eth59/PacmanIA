@@ -64,7 +64,6 @@ class State:
             is_valid_move = self.ghosts.ghosts[agentIndex - 1].validDirection(action)
         
         if not is_valid_move:
-            print("Invalid move!")
             return None
         
         # Pacman's movement
@@ -75,6 +74,7 @@ class State:
                 new_pacman = self.pacman.copy()
                 new_pacman.node = new_node
                 new_pacman.setBetweenNodes(action)
+                print(f"Pacman moved to node: {new_node.position} from {node.position}")
                 return State(new_pacman, self.ghosts, self.is_frite, self.gommes_pos, self.level, self)
             else:
                 raise ValueError("Pacman cannot move in that direction!")

@@ -68,7 +68,7 @@ class AlphaBeta:
             return value
         
         
-    def getBestMove(self, depth_limit=1):
+    def getBestMove(self, depth_limit=10):
         best_score = float('-inf')
         best_action = None
 
