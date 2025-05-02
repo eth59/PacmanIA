@@ -1,12 +1,18 @@
-def manhattanDistance(xy1, xy2):
+def manhattanDistance(node1, node2):
     """
-    Compute the Manhattan distance between two points.
-    
-    Parameters:
-    xy1 (tuple): The first point (x1, y1).
-    xy2 (tuple): The second point (x2, y2).
-    
+    Calculate the Manhattan distance between two nodes.
+
+    Args:
+        node1: First node (Node object with position property or object with x,y properties)
+        node2: Second node (Node object with position property or object with x,y properties)
+
     Returns:
-    int: The Manhattan distance between the two points.
+        float: Manhattan distance between the two nodes
     """
-    return abs(xy1[0] - xy2[0]) + abs(xy1[1] - xy2[1])
+    # Handle Node objects which have position property
+    x1 = node1.position.x
+    y1 = node1.position.y
+    x2 = node2.position.x
+    y2 = node2.position.y
+    
+    return abs(x1 - x2) + abs(y1 - y2)

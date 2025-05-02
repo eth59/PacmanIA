@@ -18,6 +18,20 @@ class Pacman(Entity):
         self.sprites = PacmanSprites(self)
         self.pipe_sound = pygame.mixer.Sound("resources/sounds/pipe.mp3") if not no_sound else DummySound()
 
+    def copy(self):
+        """Create a copy of the Pacman object.
+
+        Returns:
+            Pacman: A new Pacman object with the same attributes as the original.
+        """
+        new_pacman = Pacman(self.node, no_sound=True)
+        new_pacman.position = self.position.copy()
+        new_pacman.direction = self.direction
+        new_pacman.target = self.target
+        new_pacman.speed = self.speed
+        new_pacman.alive = self.alive
+        return new_pacman
+
     def reset(self):
         Entity.reset(self)
         self.direction = LEFT

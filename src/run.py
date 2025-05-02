@@ -128,9 +128,9 @@ class GameController(object):
         # Préparation de l'état pour alpha-beta
         if self.ia == 1:
             if self.current_state:
-                self.current_state = State(self.pacman.node, self.ghosts.getGhostsPos(), self.ghosts.getGhostsMode(), self.pellets.getPelletPos(), self.level, previous_state=self.current_state)
+                self.current_state = State(self.pacman, self.ghosts, self.ghosts.getGhostsMode(), self.pellets.getPelletPos(), self.level, previous_state=self.current_state)
             else:
-                self.current_state = State(self.pacman.node, self.ghosts.getGhostsPos(), self.ghosts.getGhostsMode(), self.pellets.getPelletPos(), self.level)
+                self.current_state = State(self.pacman, self.ghosts, self.ghosts.getGhostsMode(), self.pellets.getPelletPos(), self.level)
 
         if self.pacman.alive:
             if not self.pause.paused:

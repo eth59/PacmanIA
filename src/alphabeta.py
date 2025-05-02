@@ -1,3 +1,4 @@
+from constants import UP, DOWN, LEFT, RIGHT
 from utils import manhattanDistance
 
 class AlphaBeta:
@@ -29,53 +30,60 @@ class AlphaBeta:
             elif dist <= 2:
                 score -= 50
                 
-        return score      
+        return score    
         
         
-    def alphabeta(self, alpha, beta, depth, limit, isPacMan):
+    def alphabeta(self, alpha, beta, depth, limit, agentIndex):
         if depth == limit:
             return self.evaluate()
         
-        legal_actions = self.gameState.getLegalActions(isPacMan)
+        legal_actions = [UP, DOWN, LEFT, RIGHT]
         if not legal_actions:
             return self.evaluate()
+        
+        isPacMan = agentIndex == 0
         
         if isPacMan: # maj alpha
             value = float('-inf')
             for action in legal_actions:
-                next_state = self.gameState.generateNextState(isPacMan, action)
-                ab = AlphaBeta(next_state)
-                value = max(value, ab.alphabeta(alpha, beta, depth + 1, limit, not isPacMan))
-                alpha = max(alpha, value)
-                if beta <= alpha:
-                    break
+                next_state = self.gameState.generateNextState(agentIndex, action)
+                if next_state is not None:
+                    ab = AlphaBeta(next_state)
+                    value = max(value, ab.alphabeta(alpha, beta, depth + 1, limit, 1))
+                    alpha = max(alpha, value)
+                    if beta <= alpha:
+                        break
             return value
             
         else: # maj beta
             value = float('inf')
             for action in legal_actions:
-                next_state = self.gameState.generateNextState(isPacMan, action)
-                ab = AlphaBeta(next_state)
-                value = min(value, ab.alphabeta(alpha, beta, depth + 1, limit, not isPacMan))
-                beta = min(beta, value)
-                if beta <= alpha:
-                    break
+                next_state = self.gameState.generateNextState(agentIndex, action)
+                if next_state is not None:
+                    ab = AlphaBeta(next_state)
+                    value = min(value, ab.alphabeta(alpha, beta, depth + 1, limit, agentIndex + 1 % 5))
+                    beta = min(beta, value)
+                    if beta <= alpha:
+                        break
             return value
         
         
-    def getBestMove(self, depth_limit=10):
+    def getBestMove(self, depth_limit=1):
         best_score = float('-inf')
         best_action = None
 
-        legal_actions = self.gameState.getLegalActions(isPacMan=True)
+        actions = [UP, DOWN, LEFT, RIGHT]
 
-        for action in legal_actions:
-            next_state = self.gameState.generateNextState(isPacMan=True, action=action)
-            ab = AlphaBeta(next_state)
-            score = ab.alphabeta(alpha=float('-inf'), beta=float('inf'), depth=1, limit=depth_limit, isPacMan=False)
+        for action in actions:
+            next_state = self.gameState.generateNextState(0, action)
+            if next_state is not None:
+                ab = AlphaBeta(next_state)
+                score = ab.alphabeta(alpha=float('-inf'), beta=float('inf'), depth=1, limit=depth_limit, agentIndex=1)
 
-            if score > best_score:
-                best_score = score
-                best_action = action
+                if score > best_score:
+                    best_score = score
+                    best_action = action
 
+        if best_action is None:
+            raise ValueError("No valid action found!")
         return best_action
