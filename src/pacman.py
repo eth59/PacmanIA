@@ -1,5 +1,6 @@
 import pygame
 from pygame.locals import *
+from alphabeta import AlphaBeta
 from vector import Vector2
 from constants import *
 from entity import Entity
@@ -27,10 +28,27 @@ class Pacman(Entity):
         self.alive = False
         self.direction = STOP
 
-    def update(self, dt):	
+    def update(self, dt, ia, state=None):
+        """Update the pacman position and check for collisions with pellets or ghosts.
+
+        Args:
+            dt (?): ? ct de base quoi
+            ia (int): pour savoir quel ia utiliser
+            state (State, optional): C'est l'état de la partie, utile pour alpha beta. Defaults to None.
+
+        Raises:
+            NotImplementedError: si ia est un nombre qui correspond pas à une IA implémentée.
+        """
         self.sprites.update(dt)
         self.position += self.directions[self.direction]*self.speed*dt
-        direction = self.getValidKey()
+        if ia == 0:
+            direction = self.getValidKey()
+        elif ia == 1:
+            ab = AlphaBeta(state)
+            direction = ab.getBestMove()
+            print("Direction AI: ", direction)
+        else:
+            raise NotImplementedError("Other AI not implemented yet")
         if self.overshotTarget():
             self.node = self.target
             if self.node.neighbors[PORTAL] is not None:

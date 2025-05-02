@@ -7,6 +7,7 @@ from pellets import PelletGroup
 from ghosts import GhostGroup
 from fruit import Fruit
 from pauser import Pause
+from state import State
 from text import TextGroup
 from sprites import LifeSprites
 from sprites import MazeSprites
@@ -35,12 +36,13 @@ class GameController(object):
         self.mazedata = MazeData()
         pygame.mixer.music.load("resources/sounds/music.mp3")
         pygame.mixer.music.play(-1)
-        pygame.mixer.music.set_volume(0.2)
+        pygame.mixer.music.set_volume(0)
         self.powerup_sound = pygame.mixer.Sound("resources/sounds/powerup.mp3")
         self.death_sound = pygame.mixer.Sound("resources/sounds/death.wav")
         self.eatfruit_sound = pygame.mixer.Sound("resources/sounds/eatfruit.wav")
         self.eatghost_sound = pygame.mixer.Sound("resources/sounds/eatghost.wav")
-        
+        self.current_state = None # État actuel de la partie pour alpha-beta
+        self.ia = 1 # 0 = no AI, 1 = alpha_beta et le reste démerdez vous        
 
     def setBackground(self):
         self.background_norm = pygame.surface.Surface(SCREENSIZE).convert()
@@ -117,12 +119,19 @@ class GameController(object):
             self.checkPelletEvents()
             self.checkGhostEvents()
             self.checkFruitEvents()
+            
+        # Préparation de l'état pour alpha-beta
+        if self.ia == 1:
+            if self.current_state:
+                self.current_state = State(self.pacman.node, self.ghosts.getGhostsPos(), self.ghosts.getGhostsMode(), self.pellets.getPelletPos(), self.level, previous_state=self.current_state)
+            else:
+                self.current_state = State(self.pacman.node, self.ghosts.getGhostsPos(), self.ghosts.getGhostsMode(), self.pellets.getPelletPos(), self.level)
 
         if self.pacman.alive:
             if not self.pause.paused:
-                self.pacman.update(dt)
+                self.pacman.update(dt, self.ia, state=self.current_state)
         else:
-            self.pacman.update(dt)
+            self.pacman.update(dt, self.ia, state=self.current_state)
 
         if self.flashBG:
             self.flashTimer += dt

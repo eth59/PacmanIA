@@ -61,3 +61,21 @@ class AlphaBeta:
                 if beta <= alpha:
                     break
             return value
+        
+        
+    def getBestMove(self, depth_limit=10):
+        best_score = float('-inf')
+        best_action = None
+
+        legal_actions = self.gameState.getLegalActions(isPacMan=True)
+
+        for action in legal_actions:
+            next_state = self.gameState.generateNextState(isPacMan=True, action=action)
+            ab = AlphaBeta(next_state)
+            score = ab.alphabeta(alpha=float('-inf'), beta=float('inf'), depth=1, limit=depth_limit, isPacMan=False)
+
+            if score > best_score:
+                best_score = score
+                best_action = action
+
+        return best_action

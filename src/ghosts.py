@@ -129,6 +129,12 @@ class GhostGroup(object):
         self.inky = Inky(node, pacman, self.blinky)
         self.clyde = Clyde(node, pacman)
         self.ghosts = [self.blinky, self.pinky, self.inky, self.clyde]
+        
+    def getGhostsPos(self):
+        return [ghost.position for ghost in self.ghosts]
+    
+    def getGhostsMode(self):
+        return [ghost.mode.current for ghost in self.ghosts]
 
     def __iter__(self):
         return iter(self.ghosts)
