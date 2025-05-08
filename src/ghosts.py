@@ -29,6 +29,7 @@ class Ghost(Entity):
         new_ghost.direction = self.direction
         new_ghost.speed = self.speed
         new_ghost.points = self.points
+        new_ghost.mode = self.mode
         return new_ghost
 
     def reset(self):
@@ -36,14 +37,17 @@ class Ghost(Entity):
         self.points = 200
         self.directionMethod = self.goalDirection
 
-    def update(self, dt):
+    def update(self, dt, ia):
         self.sprites.update(dt)
         self.mode.update(dt)
         if self.mode.current is SCATTER:
             self.scatter()
         elif self.mode.current is CHASE:
             self.chase()
-        Entity.update(self, dt)
+        if ia == 1:
+            Entity.update(self, 0.05) # dt fixe pour le alpha beta sinon il traverse tout les pellets et fantômes
+        else:
+            Entity.update(self, dt)
 
     def scatter(self):
         self.goal = Vector2()
@@ -157,15 +161,18 @@ class GhostGroup(object):
     def getGhostsNodes(self):
         return [ghost.node for ghost in self.ghosts]
     
+    def getGhostsPos(self):
+        return [ghost.position for ghost in self.ghosts]
+    
     def getGhostsMode(self):
         return [ghost.mode.current for ghost in self.ghosts]
 
     def __iter__(self):
         return iter(self.ghosts)
 
-    def update(self, dt):
+    def update(self, dt, ia):
         for ghost in self:
-            ghost.update(dt)
+            ghost.update(dt, ia)
 
     def startFreight(self):
         for ghost in self:

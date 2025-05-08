@@ -56,14 +56,16 @@ class Pacman(Entity):
             NotImplementedError: si ia est un nombre qui correspond pas à une IA implémentée.
         """
         self.sprites.update(dt)
-        self.position += self.directions[self.direction]*self.speed*dt
+        if ia == 1:
+            # dt fixe pour le alpha beta sinon il traverse tout les pellets et fantômes
+            self.position += self.directions[self.direction]*self.speed*0.05
+        else:
+            self.position += self.directions[self.direction]*self.speed*dt
         if ia == 0:
             direction = self.getValidKey()
         elif ia == 1:
             ab = AlphaBeta(state)
             direction = ab.getBestMove()
-            print("Direction AI: ", direction)
-            raise NotImplementedError("Why those fucking ghosts don't move?")
         else:
             raise NotImplementedError("Other AI not implemented yet")
         if self.overshotTarget():

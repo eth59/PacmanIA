@@ -113,12 +113,12 @@ class GameController(object):
 
         
 
-    def update(self):
+    def update(self, ia):
         dt = self.clock.tick(30) / 1000.0
         self.textgroup.update(dt)
         self.pellets.update(dt)
         if not self.pause.paused:
-            self.ghosts.update(dt)      
+            self.ghosts.update(dt, ia)      
             if self.fruit is not None:
                 self.fruit.update(dt)
             self.checkPelletEvents()
@@ -128,9 +128,9 @@ class GameController(object):
         # Préparation de l'état pour alpha-beta
         if self.ia == 1:
             if self.current_state:
-                self.current_state = State(self.pacman, self.ghosts, self.ghosts.getGhostsMode(), self.pellets.getPelletPos(), self.level, previous_state=self.current_state)
+                self.current_state = State(self.pacman, self.ghosts, self.pellets.pelletList)
             else:
-                self.current_state = State(self.pacman, self.ghosts, self.ghosts.getGhostsMode(), self.pellets.getPelletPos(), self.level)
+                self.current_state = State(self.pacman, self.ghosts, self.pellets.pelletList)
 
         if self.pacman.alive:
             if not self.pause.paused:
@@ -302,7 +302,7 @@ if __name__ == "__main__":
     game = GameController(no_sound=args.no_sound, ia=args.ia)
     game.startGame(no_sound=args.no_sound)
     while True:
-        game.update()
+        game.update(args.ia)
 
 
 

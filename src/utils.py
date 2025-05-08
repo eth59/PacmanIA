@@ -10,9 +10,5 @@ def manhattanDistance(node1, node2):
         float: Manhattan distance between the two nodes
     """
     # Handle Node objects which have position property
-    x1 = node1.position.x
-    y1 = node1.position.y
-    x2 = node2.position.x
-    y2 = node2.position.y
     
-    return abs(x1 - x2) + abs(y1 - y2)
+    return abs(node1.x - node2.x) + abs(node1.y - node2.y)
