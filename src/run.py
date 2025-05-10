@@ -105,15 +105,8 @@ class GameController(object):
         self.nodes.denyAccessList(12, 26, UP, self.ghosts)
         self.nodes.denyAccessList(15, 26, UP, self.ghosts)
 
-    def getValidKey_Astar(self):
-        astar=A_star(self.ghosts,self.pellets.pelletList,self.pacman,"resources/"+self.mazedata.obj.name+".txt")
-        self.mazedata.obj.setPortalPairsAstar(astar)
-
-        return astar.next_move()
-
     def update(self,i):
         dt = self.clock.tick(30) / 1000.0
-        dt=0.033
         self.textgroup.update(dt)
         self.pellets.update(dt)
         if not self.pause.paused:
@@ -125,11 +118,9 @@ class GameController(object):
             self.checkFruitEvents()
         if self.pacman.alive:
             if not self.pause.paused:
-                self.pacman.update(dt,self.getValidKey_Astar())
-                # self.pacman.update(dt)
+                self.pacman.update(dt)
         else:
-            self.pacman.update(dt,self.getValidKey_Astar())
-            # self.pacman.update(dt)
+            self.pacman.update(dt)
 
         if self.flashBG:
             self.flashTimer += dt
