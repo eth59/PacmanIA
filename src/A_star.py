@@ -13,7 +13,6 @@ class A_star():
         self.pacman = pacman
 
         #création de la map
-        #TODO : ajout du tunnel
         self.level=level
         self.nodes={}
         self.pathSymbols = ['.', '-', '|', 'p','+', 'P', 'n']
@@ -129,7 +128,7 @@ class A_star():
             return path[0].dir
 
 
-    def get_closest_pellet(self): # TODO : à corriger ? (pb du il change d'avis)
+    def get_closest_pellet(self):
         # trouver la node sur laquelle on est
         # partir de cette node puis de voisins en voisins (parcours en largeur)
         # dès qu'il y a un pellet on le choisi comme goal
@@ -171,7 +170,7 @@ class A_star():
             neighbors = current.findNeighbors(self.nodes,self.ghosts,self.pacman) #les voisins initialisés avec g=0 et h=0
             # print(f"neighbors of {current.position.x,current.position.y}: {[(n.position.x,n.position.y) for n in neighbors]}")
             for neighbor in neighbors:
-                if (not appartenir(closed,neighbor.position) and not appartenir(open,neighbor.position)) or (appartenir(open,neighbor.position) and getGNoeud(open,neighbor.position)>current.g+1): # TODO: cout(s,s')=1 : à modifier
+                if (not appartenir(closed,neighbor.position) and not appartenir(open,neighbor.position)) or (appartenir(open,neighbor.position) and getGNoeud(open,neighbor.position)>current.g+1):
                     if appartenir(open,neighbor.position):
                         open=supp_noeud(open,neighbor.position)
                     neighbor.g=current.g+1
@@ -212,14 +211,14 @@ class A_star():
         dist,nb_pen=self.ghost_penality(noeud,dist) #le risque de croiser un fantôme doit être pénalisé
         return dist
 
-    def ghost_penality(self,noeud,dist): #TODO : mettre une variable frightened
+    def ghost_penality(self,noeud,dist):
         nb_pen=0
         if collideGhosts(noeud.position,self.ghosts,self.pacman): # normalement n'arrive pas (fantômes considérés comme des murs mouvants)
             dist+=1000000
             nb_pen
-        n = 5 # n est le nombre de tiles entre un fantôme et pacman nécessaire pour qu'il n'y ait pas de pénalité
+        n = 15 # n est le nombre de tiles entre un fantôme et pacman nécessaire pour qu'il n'y ait pas de pénalité
         for ghost in self.ghosts:
-            if not ghost.mode.current == FREIGHT:
+            if not ghost.mode.current == FREIGHT and not ghost.mode.current==SPAWN:
                 if manhattan_distance(noeud.position,ghost.position) < n*TILEWIDTH:
                     nb_pen+=1
                     dist+=1000000*(n-(manhattan_distance(noeud.position,ghost.position)//(TILEWIDTH)))
@@ -237,7 +236,7 @@ class Noeud():
         """Permet de comparer deux objets Noeud par la valeur de f."""
         return self.f < other.f
     
-    def findNeighbors(self,nodes,ghosts,pacman): #TODO : gérer les fantômes
+    def findNeighbors(self,nodes,ghosts,pacman):
         neighbors=[]
         x,y=(self.position.x,self.position.y)
         pos=(x,y)
@@ -257,9 +256,9 @@ class Noeud():
             return True
         return False
 
-def collideGhosts(pos,ghosts,pacman): #TODO : mettre une variable frightened
+def collideGhosts(pos,ghosts,pacman):
     for ghost in ghosts:
-        if not ghost.mode.current == FREIGHT:
+        if not ghost.mode.current == FREIGHT and not ghost.mode.current==SPAWN:
             d = pos - ghost.position
             dSquared = d.magnitudeSquared()
             rSquared = (pacman.collideRadius + ghost.collideRadius)**2
@@ -268,9 +267,9 @@ def collideGhosts(pos,ghosts,pacman): #TODO : mettre une variable frightened
     return False
 
 def nextToGhosts(pos,ghosts):
-    n = 2 # n est le nombre de tiles entre un fantôme et la position nécessaire pour qu'il ne soit pas considéré comme un mur
+    n = 3 # n est le nombre de tiles entre un fantôme et la position nécessaire pour qu'il ne soit pas considéré comme un mur
     for ghost in ghosts:
-        if not ghost.mode.current ==FREIGHT:
+        if not ghost.mode.current ==FREIGHT and not ghost.mode.current==SPAWN:
             if manhattan_distance(pos,ghost.position) < n*TILEWIDTH:
                 return True
     return False
