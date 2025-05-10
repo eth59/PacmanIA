@@ -296,8 +296,8 @@ class GameController(object):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--no-sound', action='store_true', help='Désactive les sons')
-    parser.add_argument('--ia', type=int, default=0, help='Choix de l\'IA (0 = aucune IA, 1 = alpha-beta)')
+    parser.add_argument('--no-sound', '-ns', action='store_true', help='Désactive les sons')
+    parser.add_argument('--ia', '-ia', type=int, default=0, help='Choix de l\'IA (0 = aucune IA, 1 = alpha-beta)')
     args = parser.parse_args()
     game = GameController(no_sound=args.no_sound, ia=args.ia)
     game.startGame(no_sound=args.no_sound)
