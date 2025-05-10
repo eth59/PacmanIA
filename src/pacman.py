@@ -1,13 +1,14 @@
 import pygame
 from pygame.locals import *
+from alphabeta import AlphaBeta
 from vector import Vector2
 from constants import *
 from entity import Entity
 from sprites import PacmanSprites
-
+from sound import DummySound
 
 class Pacman(Entity):
-    def __init__(self, node):
+    def __init__(self, node, no_sound=False):
         Entity.__init__(self, node )
         self.name = PACMAN    
         self.color = YELLOW
@@ -15,6 +16,21 @@ class Pacman(Entity):
         self.setBetweenNodes(LEFT)
         self.alive = True
         self.sprites = PacmanSprites(self)
+        self.pipe_sound = pygame.mixer.Sound("resources/sounds/pipe.mp3") if not no_sound else DummySound()
+
+    def copy(self):
+        """Create a copy of the Pacman object.
+
+        Returns:
+            Pacman: A new Pacman object with the same attributes as the original.
+        """
+        new_pacman = Pacman(self.node, no_sound=True)
+        new_pacman.position = self.position.copy()
+        new_pacman.direction = self.direction
+        new_pacman.target = self.target
+        new_pacman.speed = self.speed
+        new_pacman.alive = self.alive
+        return new_pacman
 
     def reset(self):
         Entity.reset(self)
@@ -28,15 +44,33 @@ class Pacman(Entity):
         self.alive = False
         self.direction = STOP
 
-    def update(self, dt):	
-        self.dt=dt
+    def update(self, dt, ia, state=None):
+        """Update the pacman position and check for collisions with pellets or ghosts.
+
+        Args:
+            dt (?): ? ct de base quoi
+            ia (int): pour savoir quel ia utiliser
+            state (State, optional): C'est l'état de la partie, utile pour alpha beta. Defaults to None.
+
+        Raises:
+            NotImplementedError: si ia est un nombre qui correspond pas à une IA implémentée.
+        """
         self.sprites.update(dt)
-        self.position += self.directions[self.direction]*self.speed*dt
-        direction = self.getValidKey()
+        if ia == 1:
+            # dt fixe pour le alpha beta sinon il traverse tout les pellets et fantômes
+            self.position += self.directions[self.direction]*self.speed*0.05
+        else:
+            self.position += self.directions[self.direction]*self.speed*dt
+        if ia == 0:
+            direction = self.getValidKey()
+        elif ia == 1:
+            ab = AlphaBeta(state)
+            direction = ab.getBestMove()
+        else:
+            raise NotImplementedError("Other AI not implemented yet")
         if self.overshotTarget():
             self.node = self.target
             if self.node.neighbors[PORTAL] is not None:
-                self.pipe_sound = pygame.mixer.Sound("resources/sounds/pipe.mp3")
                 self.pipe_sound.play()
                 self.node = self.node.neighbors[PORTAL]
             self.target = self.getNewTarget(direction)

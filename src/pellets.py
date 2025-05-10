@@ -42,6 +42,9 @@ class PelletGroup(object):
         self.powerpellets = []
         self.createPelletList(pelletfile)
         self.numEaten = 0
+        
+    def getPelletPos(self):
+        return [pellet.position for pellet in self.pelletList]
 
     def update(self, dt):
         for powerpellet in self.powerpellets:

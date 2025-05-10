@@ -7,14 +7,17 @@ from pellets import PelletGroup
 from ghosts import GhostGroup
 from fruit import Fruit
 from pauser import Pause
+from state import State
 from text import TextGroup
 from sprites import LifeSprites
 from sprites import MazeSprites
 from mazedata import MazeData
+from sound import DummySound
+import argparse
 from A_star import A_star
 
 class GameController(object):
-    def __init__(self):
+    def __init__(self, no_sound=False, ia=0):
         pygame.init()
         self.screen = pygame.display.set_mode(SCREENSIZE, 0, 32)
         self.background = None
@@ -34,14 +37,18 @@ class GameController(object):
         self.fruitCaptured = []
         self.fruitNode = None
         self.mazedata = MazeData()
-        pygame.mixer.music.load("resources/sounds/music.mp3")
-        pygame.mixer.music.play(-1)
-        pygame.mixer.music.set_volume(0.2)
-        self.powerup_sound = pygame.mixer.Sound("resources/sounds/powerup.mp3")
-        self.death_sound = pygame.mixer.Sound("resources/sounds/death.wav")
-        self.eatfruit_sound = pygame.mixer.Sound("resources/sounds/eatfruit.wav")
-        self.eatghost_sound = pygame.mixer.Sound("resources/sounds/eatghost.wav")
-        
+        if no_sound:
+            self.powerup_sound = self.death_sound = self.eatfruit_sound = self.eatghost_sound = DummySound()
+        else:
+            pygame.mixer.music.load("resources/sounds/music.mp3")
+            pygame.mixer.music.play(-1)
+            pygame.mixer.music.set_volume(0.2)
+            self.powerup_sound = pygame.mixer.Sound("resources/sounds/powerup.mp3")
+            self.death_sound = pygame.mixer.Sound("resources/sounds/death.wav")
+            self.eatfruit_sound = pygame.mixer.Sound("resources/sounds/eatfruit.wav")
+            self.eatghost_sound = pygame.mixer.Sound("resources/sounds/eatghost.wav")
+        self.current_state = None # État actuel de la partie pour alpha-beta
+        self.ia = ia # 0 = no AI, 1 = alpha_beta et le reste démerdez vous        
 
     def setBackground(self):
         self.background_norm = pygame.surface.Surface(SCREENSIZE).convert()
@@ -53,14 +60,14 @@ class GameController(object):
         self.flashBG = False
         self.background = self.background_norm
 
-    def startGame(self):      
+    def startGame(self, no_sound=False):      
         self.mazedata.loadMaze(self.level)
         self.mazesprites = MazeSprites("resources/"+self.mazedata.obj.name+".txt", "resources/"+self.mazedata.obj.name+"_rotation.txt")
         self.setBackground()
         self.nodes = NodeGroup("resources/"+self.mazedata.obj.name+".txt")
         self.mazedata.obj.setPortalPairs(self.nodes)
         self.mazedata.obj.connectHomeNodes(self.nodes)
-        self.pacman = Pacman(self.nodes.getNodeFromTiles(*self.mazedata.obj.pacmanStart))
+        self.pacman = Pacman(self.nodes.getNodeFromTiles(*self.mazedata.obj.pacmanStart), no_sound=no_sound)
         self.pellets = PelletGroup("resources/"+self.mazedata.obj.name+".txt")
         self.ghosts = GhostGroup(self.nodes.getStartTempNode(), self.pacman)
 
@@ -105,22 +112,32 @@ class GameController(object):
         self.nodes.denyAccessList(12, 26, UP, self.ghosts)
         self.nodes.denyAccessList(15, 26, UP, self.ghosts)
 
-    def update(self,i):
+        
+
+    def update(self, ia):
         dt = self.clock.tick(30) / 1000.0
         self.textgroup.update(dt)
         self.pellets.update(dt)
         if not self.pause.paused:
-            self.ghosts.update(dt)      
+            self.ghosts.update(dt, ia)      
             if self.fruit is not None:
                 self.fruit.update(dt)
             self.checkPelletEvents()
             self.checkGhostEvents()
             self.checkFruitEvents()
+            
+        # Préparation de l'état pour alpha-beta
+        if self.ia == 1:
+            if self.current_state:
+                self.current_state = State(self.pacman, self.ghosts, self.pellets.pelletList)
+            else:
+                self.current_state = State(self.pacman, self.ghosts, self.pellets.pelletList)
+
         if self.pacman.alive:
             if not self.pause.paused:
-                self.pacman.update(dt)
+                self.pacman.update(dt, self.ia, state=self.current_state)
         else:
-            self.pacman.update(dt)
+            self.pacman.update(dt, self.ia, state=self.current_state)
 
         if self.flashBG:
             self.flashTimer += dt
@@ -279,11 +296,13 @@ class GameController(object):
 
 
 if __name__ == "__main__":
-    game = GameController()
-    game.startGame()
-    i=0
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--no-sound', '-ns', action='store_true', help='Désactive les sons')
+    parser.add_argument('--ia', '-ia', type=int, default=0, help='Choix de l\'IA (0 = aucune IA, 1 = alpha-beta)')
+    args = parser.parse_args()
+    game = GameController(no_sound=args.no_sound, ia=args.ia)
+    game.startGame(no_sound=args.no_sound)
     while True:
-        game.update(i)
-        i+=1
+        game.update(args.ia)
 
 
