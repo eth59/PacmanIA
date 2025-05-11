@@ -124,7 +124,7 @@ class A_star():
             return STOP
         else:
             #on affiche les positions dans le path
-            # print([(p.position.x,p.position.y) for p in path])  
+            # print([(p.position.x,p.position.y) for p in path])
             return path[0].dir
 
 

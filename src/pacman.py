@@ -44,7 +44,7 @@ class Pacman(Entity):
         self.alive = False
         self.direction = STOP
 
-    def update(self, dt, ia, state=None):
+    def update(self, dt, ia, state=None, dir=None):
         """Update the pacman position and check for collisions with pellets or ghosts.
 
         Args:
@@ -66,6 +66,8 @@ class Pacman(Entity):
         elif ia == 1:
             ab = AlphaBeta(state)
             direction = ab.getBestMove()
+        elif ia == 2:
+            direction=dir
         else:
             raise NotImplementedError("Other AI not implemented yet")
         if self.overshotTarget():

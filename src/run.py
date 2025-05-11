@@ -48,7 +48,8 @@ class GameController(object):
             self.eatfruit_sound = pygame.mixer.Sound("resources/sounds/eatfruit.wav")
             self.eatghost_sound = pygame.mixer.Sound("resources/sounds/eatghost.wav")
         self.current_state = None # État actuel de la partie pour alpha-beta
-        self.ia = ia # 0 = no AI, 1 = alpha_beta et le reste démerdez vous        
+        self.direction = None # direction à prendre si on utilise A*
+        self.ia = ia # 0 = no AI, 1 = alpha_beta, 2 = A* et le reste démerdez vous        
 
     def setBackground(self):
         self.background_norm = pygame.surface.Surface(SCREENSIZE).convert()
@@ -112,7 +113,10 @@ class GameController(object):
         self.nodes.denyAccessList(12, 26, UP, self.ghosts)
         self.nodes.denyAccessList(15, 26, UP, self.ghosts)
 
-        
+    def getValidKey_Astar(self):
+        astar=A_star(self.ghosts,self.pellets.pelletList,self.pacman,"resources/"+self.mazedata.obj.name+".txt")
+        self.mazedata.obj.setPortalPairsAstar(astar)
+        return astar.next_move()
 
     def update(self, ia):
         dt = self.clock.tick(30) / 1000.0
@@ -133,11 +137,14 @@ class GameController(object):
             else:
                 self.current_state = State(self.pacman, self.ghosts, self.pellets.pelletList)
 
+        if self.ia == 2:
+            self.direction = self.getValidKey_Astar()
+
         if self.pacman.alive:
             if not self.pause.paused:
-                self.pacman.update(dt, self.ia, state=self.current_state)
+                self.pacman.update(dt, self.ia, state=self.current_state, dir=self.direction)
         else:
-            self.pacman.update(dt, self.ia, state=self.current_state)
+            self.pacman.update(dt, self.ia, state=self.current_state, dir=self.direction)
 
         if self.flashBG:
             self.flashTimer += dt
@@ -298,7 +305,7 @@ class GameController(object):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--no-sound', '-ns', action='store_true', help='Désactive les sons')
-    parser.add_argument('--ia', '-ia', type=int, default=0, help='Choix de l\'IA (0 = aucune IA, 1 = alpha-beta)')
+    parser.add_argument('--ia', '-ia', type=int, default=0, help='Choix de l\'IA (0 = aucune IA, 1 = alpha-beta, 2 = A*)')
     args = parser.parse_args()
     game = GameController(no_sound=args.no_sound, ia=args.ia)
     game.startGame(no_sound=args.no_sound)
