@@ -1,10 +1,11 @@
 import heapq
 from vector import Vector2
 from constants import *
+from pellets import Pellet,PowerPellet
 
 PERIMETREdeDANGER=(TILEWIDTH*4)**2
-FANTOMEpenalite= 500
-PERIMETREdeFUITE =(TILEWIDTH *6)**2
+FANTOMEpenalite= 600
+PERIMETREdeFUITE =(TILEWIDTH *7)**2
 PERIMETREdeFUITE_URGENTE =(TILEWIDTH *2)**2
 SCOREfuiteversSECURITE=1.0
 PENALITEfuite=0.0
@@ -202,10 +203,13 @@ class DijkstraAI:
                         min_dist_sq_to_any_ghost = min(min_dist_sq_to_any_ghost,dist_sq)
                     except Exception:
                         continue
+
                 safety_score = min_dist_sq_to_any_ghost
                 if direction==opposite_last_move:
                     safety_score-=FANTOMEpenalite
+
                 valid_options.append((safety_score,direction))
+
 
         if not valid_options:
             return STOP
@@ -304,6 +308,7 @@ class DijkstraAI:
         else: 
             self.last_flee_target_node = None
             target_node, target_pellet_obj, final_path =self.bestPtTarget(distances, previous_nodes, start_node)
+
         if target_node is None or final_path is None or not final_path:
             if last_actual_move != STOP and start_node.neighbors.get(last_actual_move):
                 return last_actual_move
@@ -358,7 +363,7 @@ class DijkstraAI:
 
                     if can_move_preferred:
                         next_direction =preferred_direction
-                    else:  # Fallback logic
+                    else:
                         best_fallback_dir =STOP
                         valid_fallback_options =[]
                         neighbor_items =list(start_node.neighbors.items()) if start_node.neighbors else []
