@@ -66,7 +66,7 @@ class Pacman(Entity):
         elif ia == 1:
             ab = AlphaBeta(state)
             direction = ab.getBestMove()
-        elif ia == 2 or ia == 3:
+        elif ia == 2 or ia == 3 or ia == 4:
             direction=dir
 
         else:
@@ -76,9 +76,9 @@ class Pacman(Entity):
             if self.node.neighbors[PORTAL] is not None:
                 self.pipe_sound.play()
                 self.node = self.node.neighbors[PORTAL]
-            self.target = self.getNewTarget(ai_direction)
+            self.target = self.getNewTarget(direction)
             if self.target is not self.node:
-                self.direction = ai_direction
+                self.direction = direction
             else:
                 self.target = self.getNewTarget(self.direction)
                 if self.target is self.node:

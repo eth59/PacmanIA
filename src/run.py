@@ -16,8 +16,7 @@ from mazedata import MazeData
 from sound import DummySound
 import argparse
 from A_star import A_star
-#from MonteCarlo import MonteCarloSearch
-from test import MonteCarloSearch
+from MonteCarlo import MonteCarloSearch
 import numpy as np
 from vector import Vector2
 from jeveuxmourir import DijkstraAI
@@ -56,7 +55,8 @@ class GameController(object):
         self.current_state = None # État actuel de la partie pour alpha-beta
         self.direction = None # direction à prendre si on utilise A*
         self.ia = ia # 0 = no AI, 1 = alpha_beta, 2 = A*, 3=MonteCarlo 4=Djikstra et le reste démerdez vous     
-        self.mcts_simulations = 500   
+        self.mcts_simulations = 500
+        self.dijkstra_ai = None
 
     def setBackground(self):
         self.background_norm = pygame.surface.Surface(SCREENSIZE).convert()
@@ -138,7 +138,6 @@ class GameController(object):
         return astar.next_move()
 
     def getValidKey_Dijkstra(self):
-        """Gets Pacman's next move using the Dijkstra AI."""
         if not self.pacman or not self.pacman.alive or self.pause.paused:
             return STOP 
         if self.dijkstra_ai:
@@ -151,9 +150,8 @@ class GameController(object):
                 import traceback
                 traceback.print_exc()
         else:
-            print("Warning: Dijkstra not initialized in getValidKey_Dijkstra.")
             return STOP 
-    def update(self,i):
+ 
     
     def getValidKey_MonteCarlo(self):
         if not self.pacman or not self.pacman.alive or self.pause.paused:
@@ -169,7 +167,6 @@ class GameController(object):
                 next_dir = self.mcts_ai.search()
                 return next_dir if next_dir is not None else STOP
             except Exception as e:
-                print(f"Error in MonteCarloSearch (V2) AI: {e}")
                 import traceback
                 traceback.print_exc()
                 return STOP
@@ -222,6 +219,8 @@ class GameController(object):
         
         if self.ia == 3:
             self.direction = self.getValidKey_MonteCarlo()
+        if self.ia == 4:
+            self.direction = self.getValidKey_Dijkstra()
 
         if self.pacman.alive:
             if not self.pause.paused:
