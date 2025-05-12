@@ -51,7 +51,8 @@ class GameController(object):
             self.eatghost_sound = pygame.mixer.Sound("resources/sounds/eatghost.wav")
         self.current_state = None # État actuel de la partie pour alpha-beta
         self.direction = None # direction à prendre si on utilise A*
-        self.ia = ia # 0 = no AI, 1 = alpha_beta, 2 = A*, 3=MonteCarlo 4=Djikstra et le reste démerdez vous        
+        self.ia = ia # 0 = no AI, 1 = alpha_beta, 2 = A*, 3=MonteCarlo 4=Djikstra et le reste démerdez vous     
+        self.mcts_simulations = 500   
 
     def setBackground(self):
         self.background_norm = pygame.surface.Surface(SCREENSIZE).convert()
@@ -174,6 +175,8 @@ class GameController(object):
 
     def update(self, ia):
         dt = self.clock.tick(30) / 1000.0
+        if ia==3:
+            dt=0.033
         self.textgroup.update(dt)
         self.pellets.update(dt)
         if not self.pause.paused:

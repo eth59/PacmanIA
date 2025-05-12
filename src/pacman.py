@@ -66,8 +66,9 @@ class Pacman(Entity):
         elif ia == 1:
             ab = AlphaBeta(state)
             direction = ab.getBestMove()
-        elif ia == 2:
+        elif ia == 2 or ia == 3:
             direction=dir
+
         else:
             raise NotImplementedError("Other AI not implemented yet")
         if self.overshotTarget():
