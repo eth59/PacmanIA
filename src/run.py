@@ -1,4 +1,5 @@
 import pygame
+import numpy as np
 from pygame.locals import *
 from constants import *
 from pacman import Pacman
@@ -7,15 +8,18 @@ from pellets import PelletGroup
 from ghosts import GhostGroup
 from fruit import Fruit
 from pauser import Pause
+from state import State
 from text import TextGroup
 from sprites import LifeSprites
 from sprites import MazeSprites
 from mazedata import MazeData
+from sound import DummySound
+import argparse
 from A_star import A_star
-from MonteCarlo import MonteCarlo
+from MonteCarlo import MonteCarloSearch
 
 class GameController(object):
-    def __init__(self):
+    def __init__(self, no_sound=False, ia=0):
         pygame.init()
         self.screen = pygame.display.set_mode(SCREENSIZE, 0, 32)
         self.background = None
@@ -35,14 +39,19 @@ class GameController(object):
         self.fruitCaptured = []
         self.fruitNode = None
         self.mazedata = MazeData()
-        pygame.mixer.music.load("resources/sounds/music.mp3")
-        # pygame.mixer.music.play(-1)
-        pygame.mixer.music.set_volume(0.2)
-        self.powerup_sound = pygame.mixer.Sound("resources/sounds/powerup.mp3")
-        self.death_sound = pygame.mixer.Sound("resources/sounds/death.wav")
-        self.eatfruit_sound = pygame.mixer.Sound("resources/sounds/eatfruit.wav")
-        self.eatghost_sound = pygame.mixer.Sound("resources/sounds/eatghost.wav")
-        
+        if no_sound:
+            self.powerup_sound = self.death_sound = self.eatfruit_sound = self.eatghost_sound = DummySound()
+        else:
+            pygame.mixer.music.load("resources/sounds/music.mp3")
+            pygame.mixer.music.play(-1)
+            pygame.mixer.music.set_volume(0.2)
+            self.powerup_sound = pygame.mixer.Sound("resources/sounds/powerup.mp3")
+            self.death_sound = pygame.mixer.Sound("resources/sounds/death.wav")
+            self.eatfruit_sound = pygame.mixer.Sound("resources/sounds/eatfruit.wav")
+            self.eatghost_sound = pygame.mixer.Sound("resources/sounds/eatghost.wav")
+        self.current_state = None # État actuel de la partie pour alpha-beta
+        self.direction = None # direction à prendre si on utilise A*
+        self.ia = ia # 0 = no AI, 1 = alpha_beta, 2 = A*, 3=MonteCarlo 4=Djikstra et le reste démerdez vous        
 
     def setBackground(self):
         self.background_norm = pygame.surface.Surface(SCREENSIZE).convert()
@@ -54,14 +63,14 @@ class GameController(object):
         self.flashBG = False
         self.background = self.background_norm
 
-    def startGame(self):      
+    def startGame(self, no_sound=False):      
         self.mazedata.loadMaze(self.level)
         self.mazesprites = MazeSprites("resources/"+self.mazedata.obj.name+".txt", "resources/"+self.mazedata.obj.name+"_rotation.txt")
         self.setBackground()
         self.nodes = NodeGroup("resources/"+self.mazedata.obj.name+".txt")
         self.mazedata.obj.setPortalPairs(self.nodes)
         self.mazedata.obj.connectHomeNodes(self.nodes)
-        self.pacman = Pacman(self.nodes.getNodeFromTiles(*self.mazedata.obj.pacmanStart))
+        self.pacman = Pacman(self.nodes.getNodeFromTiles(*self.mazedata.obj.pacmanStart), no_sound=no_sound)
         self.pellets = PelletGroup("resources/"+self.mazedata.obj.name+".txt")
         self.ghosts = GhostGroup(self.nodes.getStartTempNode(), self.pacman)
 
@@ -76,7 +85,17 @@ class GameController(object):
         self.ghosts.inky.startNode.denyAccess(RIGHT, self.ghosts.inky)
         self.ghosts.clyde.startNode.denyAccess(LEFT, self.ghosts.clyde)
         self.mazedata.obj.denyGhostsAccess(self.ghosts, self.nodes)
-        self.mC=MonteCarlo(self.pacman, self.ghosts, self.pellets,"resources/"+self.mazedata.obj.name+".txt",300, self.score)
+        self.mcts_ai = MonteCarloSearch(
+            pacman=self.pacman,
+            ghosts=self.ghosts.ghosts, 
+            pellets=self.pellets,
+            level_data="resources/"+self.mazedata.obj.name+".txt",
+            maze_nodes=self.nodes.nodesLUT,
+            N=self.mcts_simulations,
+            current_score=self.score,
+            last_actual_move=self.pacman.direction 
+        )
+        
 
     def startGame_old(self):      
         self.mazedata.loadMaze(self.level)#######
@@ -110,33 +129,79 @@ class GameController(object):
     def getValidKey_Astar(self):
         astar=A_star(self.ghosts,self.pellets.pelletList,self.pacman,"resources/"+self.mazedata.obj.name+".txt")
         self.mazedata.obj.setPortalPairsAstar(astar)
-
         return astar.next_move()
-
+    
     def getValidKey_MonteCarlo(self):
-        return self.mC.next_move()
+        if not self.pacman or not self.pacman.alive or self.pause.paused:
+            return STOP
 
-    def update(self,i):
+        if self.mcts_ai:
+            try:
+                self.mcts_ai.pacman_start = self.pacman 
+                self.mcts_ai.ghosts_start = self.ghosts.ghosts
+                self.mcts_ai.pellets_start = self.pellets 
+                self.mcts_ai.current_score = self.score
+                self.mcts_ai.last_actual_move = self.pacman.direction 
+                next_dir = self.mcts_ai.search()
+                return next_dir if next_dir is not None else STOP
+            except Exception as e:
+                print(f"Error in MonteCarloSearch (V2) AI: {e}")
+                import traceback
+                traceback.print_exc()
+                return STOP
+        else:
+            try:
+                maze_name = self.mazedata.obj.name
+                maze_filepath = f"resources/{maze_name}.txt"
+                level_data_for_mcts = np.loadtxt(maze_filepath, dtype='<U1')
+
+                temp_mcts = MonteCarloSearch(
+                    pacman=self.pacman,
+                    ghosts=self.ghosts.ghosts,
+                    pellets=self.pellets,
+                    level_data=level_data_for_mcts,
+                    maze_nodes=self.nodes.nodesLUT,
+                    N=self.mcts_simulations,
+                    current_score=self.score,
+                    last_actual_move=self.pacman.direction
+                )
+                next_dir = temp_mcts.search()
+                return next_dir if next_dir is not None else STOP
+            except Exception as e_fallback:
+                traceback.print_exc()
+                return STOP
+
+
+    def update(self, ia):
         dt = self.clock.tick(30) / 1000.0
-        dt=0.033
         self.textgroup.update(dt)
         self.pellets.update(dt)
         if not self.pause.paused:
-            self.ghosts.update(dt)      
+            self.ghosts.update(dt, ia)      
             if self.fruit is not None:
                 self.fruit.update(dt)
             self.checkPelletEvents()
             self.checkGhostEvents()
             self.checkFruitEvents()
+            
+        # Préparation de l'état pour alpha-beta
+        if self.ia == 1:
+            if self.current_state:
+                self.current_state = State(self.pacman, self.ghosts, self.pellets.pelletList)
+            else:
+                self.current_state = State(self.pacman, self.ghosts, self.pellets.pelletList)
+
+        if self.ia == 2:
+            self.direction = self.getValidKey_Astar()
+        
+        if self.ia == 3:
+            self.direction = self.getValidKey_MonteCarlo()
+
         if self.pacman.alive:
             if not self.pause.paused:
-                self.pacman.update(dt,self.getValidKey_MonteCarlo())
-                #self.pacman.update(dt,self.getValidKey_Astar())
-                # self.pacman.update(dt)
+                self.pacman.update(dt, self.ia, state=self.current_state, dir=self.direction)
         else:
-            self.pacman.update(dt,self.getValidKey_MonteCarlo())
-            #self.pacman.update(dt,self.getValidKey_Astar())
-            # self.pacman.update(dt)
+            self.pacman.update(dt, self.ia, state=self.current_state, dir=self.direction)
 
         if self.flashBG:
             self.flashTimer += dt
@@ -295,11 +360,13 @@ class GameController(object):
 
 
 if __name__ == "__main__":
-    game = GameController()
-    game.startGame()
-    i=0
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--no-sound', '-ns', action='store_true', help='Désactive les sons')
+    parser.add_argument('--ia', '-ia', type=int, default=0, help='Choix de l\'IA (0 = aucune IA, 1 = alpha-beta, 2 = A*, 3 = Monte Carlo,4= Djikstra)')
+    args = parser.parse_args()
+    game = GameController(no_sound=args.no_sound, ia=args.ia)
+    game.startGame(no_sound=args.no_sound)
     while True:
-        game.update(i)
-        i+=1
+        game.update(args.ia)
 
 

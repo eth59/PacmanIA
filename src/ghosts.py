@@ -17,20 +17,37 @@ class Ghost(Entity):
         self.mode = ModeController(self)
         self.blinky = blinky
         self.homeNode = node
+        
+    def copy(self):
+        """Create a copy of the Ghost object.
+
+        Returns:
+            Ghost: A new Ghost object with the same attributes as the original.
+        """
+        new_ghost = Ghost(self.node, self.pacman, self.blinky)
+        new_ghost.position = self.position.copy()
+        new_ghost.direction = self.direction
+        new_ghost.speed = self.speed
+        new_ghost.points = self.points
+        new_ghost.mode = self.mode
+        return new_ghost
 
     def reset(self):
         Entity.reset(self)
         self.points = 200
         self.directionMethod = self.goalDirection
 
-    def update(self, dt):
+    def update(self, dt, ia):
         self.sprites.update(dt)
         self.mode.update(dt)
         if self.mode.current is SCATTER:
             self.scatter()
         elif self.mode.current is CHASE:
             self.chase()
-        Entity.update(self, dt)
+        if ia == 1:
+            Entity.update(self, 0.05) # dt fixe pour le alpha beta sinon il traverse tout les pellets et fantômes
+        else:
+            Entity.update(self, dt)
 
     def scatter(self):
         self.goal = Vector2()
@@ -129,13 +146,33 @@ class GhostGroup(object):
         self.inky = Inky(node, pacman, self.blinky)
         self.clyde = Clyde(node, pacman)
         self.ghosts = [self.blinky, self.pinky, self.inky, self.clyde]
+        
+    def copy(self):
+        """Create a copy of the GhostGroup object.
+
+        Returns:
+            GhostGroup: A new GhostGroup object with the same attributes as the original.
+        """
+        new_ghosts = GhostGroup(self.blinky.node, self.blinky.pacman)
+        for i in range(len(self.ghosts)):
+            new_ghosts.ghosts[i] = self.ghosts[i].copy()
+        return new_ghosts
+        
+    def getGhostsNodes(self):
+        return [ghost.node for ghost in self.ghosts]
+    
+    def getGhostsPos(self):
+        return [ghost.position for ghost in self.ghosts]
+    
+    def getGhostsMode(self):
+        return [ghost.mode.current for ghost in self.ghosts]
 
     def __iter__(self):
         return iter(self.ghosts)
 
-    def update(self, dt):
+    def update(self, dt, ia):
         for ghost in self:
-            ghost.update(dt)
+            ghost.update(dt, ia)
 
     def startFreight(self):
         for ghost in self:
