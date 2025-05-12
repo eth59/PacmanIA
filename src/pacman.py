@@ -76,19 +76,17 @@ class Pacman(Entity):
             if self.node.neighbors[PORTAL] is not None:
                 self.pipe_sound.play()
                 self.node = self.node.neighbors[PORTAL]
-            self.target = self.getNewTarget(direction)
+            self.target = self.getNewTarget(ai_direction)
             if self.target is not self.node:
-                self.direction = direction
+                self.direction = ai_direction
             else:
                 self.target = self.getNewTarget(self.direction)
+                if self.target is self.node:
+                    self.direction = STOP
 
-            if self.target is self.node:
-                self.direction = STOP
             self.setPosition()
-        else: 
-            if self.oppositeDirection(direction):
-                self.reverseDirection()
-
+        else:
+            pass
     def getValidKey(self):
         key_pressed = pygame.key.get_pressed()
         if key_pressed[K_UP]:
